@@ -1,0 +1,2666 @@
+[
+    {
+        "name": "Kitchen"
+    },
+    {
+        "name": "Stockroom"
+    },
+    {
+        "name": "Workshop"
+    },
+    {
+        "name": "Bedroom"
+    },
+    {
+        "name": "Prep Area"
+    },
+    {
+        "name": "Bakery Kitchen"
+    },
+    {
+        "name": "Packaging Line"
+    },
+    {
+        "name": "Design Station"
+    },
+    {
+        "name": "Repair Bench"
+    },
+    {
+        "name": "Dining Room"
+    },
+    {
+        "name": "Production Area"
+    },
+    {
+        "name": "Gift Wrapping Station"
+    },
+    {
+        "name": "Production Floor"
+    },
+    {
+        "name": "Living Room"
+    },
+    {
+        "name": "Processing Area"
+    },
+    {
+        "name": "Workshop Area"
+    },
+    {
+        "name": "Packaging Area"
+    },
+    {
+        "name": "Nursery"
+    },
+    {
+        "name": "Sewing Floor"
+    },
+    {
+        "name": "Laundry Room"
+    },
+    {
+        "name": "Service Bay"
+    },
+    {
+        "name": "Warehouse"
+    },
+    {
+        "name": "Backroom"
+    },
+    {
+        "name": "Sales Floor"
+    },
+    {
+        "name": "Ironing Station"
+    },
+    {
+        "name": "Filling Station"
+    },
+    {
+        "name": "Testing Counter"
+    },
+    {
+        "name": "Home Office"
+    },
+    {
+        "name": "Workbench"
+    },
+    {
+        "name": "Field / outdoor"
+    },
+    {
+        "name": "Garden"
+    },
+    {
+        "name": "Storage Room"
+    },
+    {
+        "name": "Fragrance Display Area"
+    },
+    {
+        "name": "Backyard"
+    },
+    {
+        "name": "Tackle Section"
+    },
+    {
+        "name": "Packaging Station"
+    },
+    {
+        "name": "Bathroom"
+    },
+    {
+        "name": "Stacks"
+    },
+    {
+        "name": "Office"
+    },
+    {
+        "name": "Patio"
+    },
+    {
+        "name": "Engine Repair Station"
+    },
+    {
+        "name": "Folding Station"
+    },
+    {
+        "name": "Hardware Section"
+    },
+    {
+        "name": "Electrical Section"
+    },
+    {
+        "name": "Vegetable Garden"
+    },
+    {
+        "name": "Finishing Area"
+    },
+    {
+        "name": "Hotel Room"
+    },
+    {
+        "name": "Mixing Area"
+    },
+    {
+        "name": "Assembly Area"
+    },
+    {
+        "name": "Packing Station"
+    },
+    {
+        "name": "Decorating Station"
+    },
+    {
+        "name": "Sewing Station"
+    },
+    {
+        "name": "Prescription Filling Area"
+    },
+    {
+        "name": "Entryway"
+    },
+    {
+        "name": "Display Area"
+    },
+    {
+        "name": "Souvenir Section"
+    },
+    {
+        "name": "Sorting Area"
+    },
+    {
+        "name": "Consultation Area"
+    },
+    {
+        "name": "Arrangement Area"
+    },
+    {
+        "name": "Greenhouse"
+    },
+    {
+        "name": "Sewing Area"
+    },
+    {
+        "name": "Fabrication Floor"
+    },
+    {
+        "name": "Polishing Station"
+    },
+    {
+        "name": "Garage"
+    },
+    {
+        "name": "Detailing Bay"
+    },
+    {
+        "name": "Dishwashing Area"
+    },
+    {
+        "name": "Canned Goods Aisle"
+    },
+    {
+        "name": "Handcraft Workshop"
+    },
+    {
+        "name": "Snack Aisle"
+    },
+    {
+        "name": "Packing Shed"
+    },
+    {
+        "name": "Stain Treatment Station"
+    },
+    {
+        "name": "Cooking Area"
+    },
+    {
+        "name": "Utility Room"
+    },
+    {
+        "name": "Food Section"
+    },
+    {
+        "name": "Craft Room"
+    },
+    {
+        "name": "Application Area"
+    },
+    {
+        "name": "Balcony"
+    },
+    {
+        "name": "Cutting Room"
+    },
+    {
+        "name": "Washing Area"
+    },
+    {
+        "name": "Workspace"
+    },
+    {
+        "name": "Shelf Interaction"
+    },
+    {
+        "name": "Quality Control Area"
+    },
+    {
+        "name": "Porch"
+    },
+    {
+        "name": "Potting Station"
+    },
+    {
+        "name": "Counter"
+    },
+    {
+        "name": "Recycling Center"
+    },
+    {
+        "name": "Cutting Table"
+    },
+    {
+        "name": "Repair Station"
+    },
+    {
+        "name": "Checkout Counter"
+    },
+    {
+        "name": "Hallway"
+    },
+    {
+        "name": "Kitchen Sink"
+    },
+    {
+        "name": "Gym"
+    },
+    {
+        "name": "Alterations Studio"
+    },
+    {
+        "name": "Parts Room"
+    },
+    {
+        "name": "Print Shop"
+    },
+    {
+        "name": "Washing Bay"
+    },
+    {
+        "name": "Break Room"
+    },
+    {
+        "name": "Craft Section"
+    },
+    {
+        "name": "Flower Shop Workspace"
+    },
+    {
+        "name": "Health and Beauty Section"
+    },
+    {
+        "name": "Pastry Shop Kitchen"
+    },
+    {
+        "name": "Live Bait Area"
+    },
+    {
+        "name": "Outdoor Seating"
+    },
+    {
+        "name": "Packaging Machine Area"
+    },
+    {
+        "name": "Assembly Line"
+    },
+    {
+        "name": "Workstation"
+    },
+    {
+        "name": "Desk Area"
+    },
+    {
+        "name": "Sample Room"
+    },
+    {
+        "name": "Cutting Station"
+    },
+    {
+        "name": "Storage Area"
+    },
+    {
+        "name": "Workstation Area"
+    },
+    {
+        "name": "Alteration Workstation"
+    },
+    {
+        "name": "Ribbon Station"
+    },
+    {
+        "name": "Staff Work Area"
+    },
+    {
+        "name": "Niche Perfume Section"
+    },
+    {
+        "name": "Stitching Area"
+    },
+    {
+        "name": "Potting Area"
+    },
+    {
+        "name": "Store Aisle"
+    },
+    {
+        "name": "Material Storage"
+    },
+    {
+        "name": "Reel Section"
+    },
+    {
+        "name": "Seating Area"
+    },
+    {
+        "name": "Workbench Area"
+    },
+    {
+        "name": "Workshop Floor"
+    },
+    {
+        "name": "Garden Centre"
+    },
+    {
+        "name": "Table Section"
+    },
+    {
+        "name": "Play Area"
+    },
+    {
+        "name": "Library"
+    },
+    {
+        "name": "Woodworking Shop"
+    },
+    {
+        "name": "Demonstration Area"
+    },
+    {
+        "name": "Outdoor Plant Area"
+    },
+    {
+        "name": "Kitchen Prep Station"
+    },
+    {
+        "name": "Weight Training Area"
+    },
+    {
+        "name": "Showroom"
+    },
+    {
+        "name": "Stitching Station"
+    },
+    {
+        "name": "Mixing Station"
+    },
+    {
+        "name": "Restroom"
+    },
+    {
+        "name": "Labeling Area"
+    },
+    {
+        "name": "Grocery Store Aisle"
+    },
+    {
+        "name": "Bait Section"
+    },
+    {
+        "name": "Shoe Repair Store"
+    },
+    {
+        "name": "Clothing Store"
+    },
+    {
+        "name": "Football Field"
+    },
+    {
+        "name": "Shoe Cleaning Station"
+    },
+    {
+        "name": "Metalworking Bench"
+    },
+    {
+        "name": "Exterior Detailing Bay"
+    },
+    {
+        "name": "Restaurant Kitchen Prep Station"
+    },
+    {
+        "name": "Pizza Prep Station"
+    },
+    {
+        "name": "Toy Factory"
+    },
+    {
+        "name": "Tea Production"
+    },
+    {
+        "name": "Room Service Kitchen"
+    },
+    {
+        "name": "Espresso Bar"
+    },
+    {
+        "name": "Floor Workspace"
+    },
+    {
+        "name": "Folding Area"
+    },
+    {
+        "name": "Wire Cable Factory"
+    },
+    {
+        "name": "Room"
+    },
+    {
+        "name": "Reading Room"
+    },
+    {
+        "name": "Craft Station"
+    },
+    {
+        "name": "Parking Lot"
+    },
+    {
+        "name": "Laundry Area"
+    },
+    {
+        "name": "Kitchen Floor"
+    },
+    {
+        "name": "Standard Room"
+    },
+    {
+        "name": "Dining Area"
+    },
+    {
+        "name": "Checkout Area"
+    },
+    {
+        "name": "Home"
+    },
+    {
+        "name": "Sealing Station"
+    },
+    {
+        "name": "Wrapping Station"
+    },
+    {
+        "name": "Crafting Station"
+    },
+    {
+        "name": "Restaurant Kitchen Prep Area"
+    },
+    {
+        "name": "Retail Counter"
+    },
+    {
+        "name": "Kitchen Counter"
+    },
+    {
+        "name": "Cooking Line"
+    },
+    {
+        "name": "Upholstery Station"
+    },
+    {
+        "name": "Clothing Aisle"
+    },
+    {
+        "name": "Tea Production Area"
+    },
+    {
+        "name": "Restaurant Kitchen"
+    },
+    {
+        "name": "Rod Section"
+    },
+    {
+        "name": "Pharmacy Counter"
+    },
+    {
+        "name": "Janitorial Supplies Section"
+    },
+    {
+        "name": "Pressing Area"
+    },
+    {
+        "name": "Prep Station"
+    },
+    {
+        "name": "Bakery"
+    },
+    {
+        "name": "Farmhouse"
+    },
+    {
+        "name": "Entrance"
+    },
+    {
+        "name": "Stringing Area"
+    },
+    {
+        "name": "Wick Preparation Area"
+    },
+    {
+        "name": "Childrens Section"
+    },
+    {
+        "name": "Soldering Station"
+    },
+    {
+        "name": "Florist Workspace"
+    },
+    {
+        "name": "Bottling Line"
+    },
+    {
+        "name": "Washing Station"
+    },
+    {
+        "name": "Mosaic Workshop"
+    },
+    {
+        "name": "Table Area"
+    },
+    {
+        "name": "Melting Station"
+    },
+    {
+        "name": "Shoe Section"
+    },
+    {
+        "name": "Crafting Area"
+    },
+    {
+        "name": "Trim Storage"
+    },
+    {
+        "name": "Baking Station"
+    },
+    {
+        "name": "Wood Carving Shop"
+    },
+    {
+        "name": "Work Area"
+    },
+    {
+        "name": "Chicken Coop"
+    },
+    {
+        "name": "Closet"
+    },
+    {
+        "name": "Sewing Factory"
+    },
+    {
+        "name": "Work Bench"
+    },
+    {
+        "name": "Beverage Aisle"
+    },
+    {
+        "name": "Sign Shop"
+    },
+    {
+        "name": "Archive Room"
+    },
+    {
+        "name": "Pantry"
+    },
+    {
+        "name": "Repair Center"
+    },
+    {
+        "name": "Nail Station"
+    },
+    {
+        "name": "Machine Section"
+    },
+    {
+        "name": "Assembly Station"
+    },
+    {
+        "name": "Pastry Shop Prep Station"
+    },
+    {
+        "name": "Cleaning Station"
+    },
+    {
+        "name": "Driveway"
+    },
+    {
+        "name": "Jewelry Section"
+    },
+    {
+        "name": "Polishing Area"
+    },
+    {
+        "name": "Packing Area"
+    },
+    {
+        "name": "Bakery Prep Station"
+    },
+    {
+        "name": "Deli Counter"
+    },
+    {
+        "name": "Massage Room"
+    },
+    {
+        "name": "Demo Area"
+    },
+    {
+        "name": "Tackle Shop"
+    },
+    {
+        "name": "Womens Section"
+    },
+    {
+        "name": "Gardening Area"
+    },
+    {
+        "name": "Study Room"
+    },
+    {
+        "name": "Living Room Section"
+    },
+    {
+        "name": "Percussion Station"
+    },
+    {
+        "name": "Gluing Station"
+    },
+    {
+        "name": "Raw Material Storage"
+    },
+    {
+        "name": "Bottling Station"
+    },
+    {
+        "name": "Patio Workshop"
+    },
+    {
+        "name": "Accessories Section"
+    },
+    {
+        "name": "Screen Printing Station"
+    },
+    {
+        "name": "Pressing Station"
+    },
+    {
+        "name": "Sealing Area"
+    },
+    {
+        "name": "Baking Area"
+    },
+    {
+        "name": "Produce Section"
+    },
+    {
+        "name": "Mens Section"
+    },
+    {
+        "name": "Office Supplies Section"
+    },
+    {
+        "name": "Writing Instruments Section"
+    },
+    {
+        "name": "Print Station"
+    },
+    {
+        "name": "Indoor Plant Section"
+    },
+    {
+        "name": "Laundry Shop Ironing Station"
+    },
+    {
+        "name": "Bakery Packaging Station"
+    },
+    {
+        "name": "Plumbing Section"
+    },
+    {
+        "name": "Bird Section"
+    },
+    {
+        "name": "Hotel Room Bathroom"
+    },
+    {
+        "name": "Medical Clinic"
+    },
+    {
+        "name": "Desk"
+    },
+    {
+        "name": "Binding Area"
+    },
+    {
+        "name": "Home Decor Section"
+    },
+    {
+        "name": "Finishing Station"
+    },
+    {
+        "name": "Home Workshop"
+    },
+    {
+        "name": "Pattern Room"
+    },
+    {
+        "name": "Bridal Atelier"
+    },
+    {
+        "name": "Aquarium Section"
+    },
+    {
+        "name": "Non Fiction Section"
+    },
+    {
+        "name": "Outdoor Patio"
+    },
+    {
+        "name": "Bar Counter"
+    },
+    {
+        "name": "Equipment Yard"
+    },
+    {
+        "name": "Floor Area"
+    },
+    {
+        "name": "Food Preparation Area"
+    },
+    {
+        "name": "Den"
+    },
+    {
+        "name": "Flower Shop"
+    },
+    {
+        "name": "Art Supplies Section"
+    },
+    {
+        "name": "Artwork Preparation Area"
+    },
+    {
+        "name": "Cutting Area"
+    },
+    {
+        "name": "Grinding Station"
+    },
+    {
+        "name": "Belt Manufactoring Factory"
+    },
+    {
+        "name": "Dessert Business Prep Station"
+    },
+    {
+        "name": "Crafting Table"
+    },
+    {
+        "name": "Utility Area"
+    },
+    {
+        "name": "Cleaning Service Area"
+    },
+    {
+        "name": "Kitchen Area"
+    },
+    {
+        "name": "Floral Department"
+    },
+    {
+        "name": "Cataloging Area"
+    },
+    {
+        "name": "Interior Detailing Bay"
+    },
+    {
+        "name": "Music Store Workshop"
+    },
+    {
+        "name": "Courtyard"
+    },
+    {
+        "name": "Skin Care Section"
+    },
+    {
+        "name": "Patio Workspace"
+    },
+    {
+        "name": "Wash Area"
+    },
+    {
+        "name": "Plant Nursery"
+    },
+    {
+        "name": "Cobbler Station"
+    },
+    {
+        "name": "Waiting Area"
+    },
+    {
+        "name": "Pcb Assembly Area"
+    },
+    {
+        "name": "Heat Press Area"
+    },
+    {
+        "name": "Quality Control Lab"
+    },
+    {
+        "name": "Chicken Shop"
+    },
+    {
+        "name": "Restaurant Kitchen Sink"
+    },
+    {
+        "name": "Clothing Store Stockroom"
+    },
+    {
+        "name": "Pharmacy"
+    },
+    {
+        "name": "Parts Storage"
+    },
+    {
+        "name": "Vegetable Plant Section"
+    },
+    {
+        "name": "Perfume Store Workspace"
+    },
+    {
+        "name": "Laboratory Bench"
+    },
+    {
+        "name": "Fishing Shop"
+    },
+    {
+        "name": "Restaurant Kitchen Floor"
+    },
+    {
+        "name": "Home Workspace"
+    },
+    {
+        "name": "Repair Store Workbench"
+    },
+    {
+        "name": "Fiction Section"
+    },
+    {
+        "name": "Playroom"
+    },
+    {
+        "name": "Kitchen Table"
+    },
+    {
+        "name": "Front Yard"
+    },
+    {
+        "name": "Kitchen Prep Area"
+    },
+    {
+        "name": "Scrap Plastic Recycling Area"
+    },
+    {
+        "name": "Engine Cleaning Area"
+    },
+    {
+        "name": "Perfume Store"
+    },
+    {
+        "name": "Booth Section"
+    },
+    {
+        "name": "Printing Station"
+    },
+    {
+        "name": "Engine Bay Cleaning Area"
+    },
+    {
+        "name": "Prepress Area"
+    },
+    {
+        "name": "Tool Room"
+    },
+    {
+        "name": "Table"
+    },
+    {
+        "name": "Food Prep Station"
+    },
+    {
+        "name": "String Station"
+    },
+    {
+        "name": "Paint Section"
+    },
+    {
+        "name": "Pet Accessories Aisle"
+    },
+    {
+        "name": "Fabrication Area"
+    },
+    {
+        "name": "Stockroom Aisle"
+    },
+    {
+        "name": "Retail Store"
+    },
+    {
+        "name": "Purification Section"
+    },
+    {
+        "name": "Capping Station"
+    },
+    {
+        "name": "Outdoor Workshop"
+    },
+    {
+        "name": "Restaurant"
+    },
+    {
+        "name": "Retail Aisle"
+    },
+    {
+        "name": "Sorting Station"
+    },
+    {
+        "name": "Appliance Demonstration Area"
+    },
+    {
+        "name": "Garden Area"
+    },
+    {
+        "name": "Logistics Center"
+    },
+    {
+        "name": "Cleaning Chemicals Section"
+    },
+    {
+        "name": "Pickup Counter"
+    },
+    {
+        "name": "Weighing Station"
+    },
+    {
+        "name": "Sanding Area"
+    },
+    {
+        "name": "Market Stall"
+    },
+    {
+        "name": "Manual Workstation"
+    },
+    {
+        "name": "Finished Goods Warehouse"
+    },
+    {
+        "name": "Alteration Studio"
+    },
+    {
+        "name": "Treatment Room"
+    },
+    {
+        "name": "Weight Room"
+    },
+    {
+        "name": "Grocery Store"
+    },
+    {
+        "name": "Craft Area"
+    },
+    {
+        "name": "Band Adjustment Area"
+    },
+    {
+        "name": "Laundry Shop"
+    },
+    {
+        "name": "Body Shop"
+    },
+    {
+        "name": "Free Weight Section"
+    },
+    {
+        "name": "Restaurant Prep Station"
+    },
+    {
+        "name": "Retail Store Counter"
+    },
+    {
+        "name": "Commercial Kitchen"
+    },
+    {
+        "name": "Brewing Station"
+    },
+    {
+        "name": "Store Floor"
+    },
+    {
+        "name": "Produce Prep Area"
+    },
+    {
+        "name": "Grain Storage"
+    },
+    {
+        "name": "Electronics Shop Workbench"
+    },
+    {
+        "name": "Watch Repair Stall"
+    },
+    {
+        "name": "Retail Area"
+    },
+    {
+        "name": "Fry Station"
+    },
+    {
+        "name": "Book Repair Room"
+    },
+    {
+        "name": "Laundry Business Bottling Area"
+    },
+    {
+        "name": "Car Wash"
+    },
+    {
+        "name": "Digital Printing Area"
+    },
+    {
+        "name": "Wet Lab"
+    },
+    {
+        "name": "Food Stall"
+    },
+    {
+        "name": "Kitchen Sink Area"
+    },
+    {
+        "name": "Grocery Aisle"
+    },
+    {
+        "name": "Work Room"
+    },
+    {
+        "name": "Office Desk"
+    },
+    {
+        "name": "Lumber Storage"
+    },
+    {
+        "name": "Makeup Section"
+    },
+    {
+        "name": "Service Counter"
+    },
+    {
+        "name": "Drying Area"
+    },
+    {
+        "name": "Lounge Area"
+    },
+    {
+        "name": "Receiving Area"
+    },
+    {
+        "name": "Dough Prep Area"
+    },
+    {
+        "name": "Recycling Area"
+    },
+    {
+        "name": "Food Prep Area"
+    },
+    {
+        "name": "Maintenance Workshop"
+    },
+    {
+        "name": "Workshop Brick Making"
+    },
+    {
+        "name": "Logistics Fulfillment Center"
+    },
+    {
+        "name": "Shop Floor"
+    },
+    {
+        "name": "Barista Station"
+    },
+    {
+        "name": "Pet Shop Weighing Station"
+    },
+    {
+        "name": "Construction Site"
+    },
+    {
+        "name": "Laundry Business Shoe Cleaning Station"
+    },
+    {
+        "name": "Cobbler Workbench"
+    },
+    {
+        "name": "Laundry Shop Storage Area"
+    },
+    {
+        "name": "Craft Workshop"
+    },
+    {
+        "name": "Office Workspace"
+    },
+    {
+        "name": "Maintenance Shop"
+    },
+    {
+        "name": "Display Case Area"
+    },
+    {
+        "name": "Electromechanical Workshop"
+    },
+    {
+        "name": "Outdoor Workspace"
+    },
+    {
+        "name": "Office Floor"
+    },
+    {
+        "name": "Kitchen and Dining Area"
+    },
+    {
+        "name": "Labeling Station"
+    },
+    {
+        "name": "Home Kitchen"
+    },
+    {
+        "name": "Bottling Area"
+    },
+    {
+        "name": "Cobbler Workspace"
+    },
+    {
+        "name": "Nursery Area"
+    },
+    {
+        "name": "Sewing Workshop"
+    },
+    {
+        "name": "Pastry Shop Packaging Station"
+    },
+    {
+        "name": "Deck"
+    },
+    {
+        "name": "Dyeing Station"
+    },
+    {
+        "name": "Workshop Table"
+    },
+    {
+        "name": "Floor"
+    },
+    {
+        "name": "Egg Sorting Area"
+    },
+    {
+        "name": "Cardio Area"
+    },
+    {
+        "name": "Meat Prep Area"
+    },
+    {
+        "name": "Locker Room"
+    },
+    {
+        "name": "Perfume Blending Station"
+    },
+    {
+        "name": "Food Production Area"
+    },
+    {
+        "name": "Outdoor Area"
+    },
+    {
+        "name": "Sewing Room"
+    },
+    {
+        "name": "Preparation Area"
+    },
+    {
+        "name": "Coconut Processing Area"
+    },
+    {
+        "name": "Grill Station"
+    },
+    {
+        "name": "Table Saw Area"
+    },
+    {
+        "name": "Kitchen Pantry"
+    },
+    {
+        "name": "Pouring Station"
+    },
+    {
+        "name": "Student Workstation"
+    },
+    {
+        "name": "Bakery Prep Area"
+    },
+    {
+        "name": "Dining Table"
+    },
+    {
+        "name": "Perfume Mixing Station"
+    },
+    {
+        "name": "Apparel Section"
+    },
+    {
+        "name": "Tea Processing Area"
+    },
+    {
+        "name": "Clearance Section"
+    },
+    {
+        "name": "Stamping Area"
+    },
+    {
+        "name": "Service Desk"
+    },
+    {
+        "name": "Laundry Business Ironing Station"
+    },
+    {
+        "name": "Outdoor Furniture Section"
+    },
+    {
+        "name": "Bookstore"
+    },
+    {
+        "name": "Frozen Foods Section"
+    },
+    {
+        "name": "Wash Bay"
+    },
+    {
+        "name": "Storage Shed"
+    },
+    {
+        "name": "Cobbler Workshop"
+    },
+    {
+        "name": "Laundry Shop Stockroom"
+    },
+    {
+        "name": "Hair Care Section"
+    },
+    {
+        "name": "Sports Field Sidelines"
+    },
+    {
+        "name": "Staff Break Room"
+    },
+    {
+        "name": "Bar Area"
+    },
+    {
+        "name": "Restaurant Prep Area"
+    },
+    {
+        "name": "Repair Workbench"
+    },
+    {
+        "name": "Shoemaking Workshop"
+    },
+    {
+        "name": "Tea Production Room"
+    },
+    {
+        "name": "Nail Art Station"
+    },
+    {
+        "name": "Egg Sorting Station"
+    },
+    {
+        "name": "Customer Service Desk"
+    },
+    {
+        "name": "Seasonal Section"
+    },
+    {
+        "name": "Open Office Space"
+    },
+    {
+        "name": "Dry Storage"
+    },
+    {
+        "name": "Dessert Business Kitchen"
+    },
+    {
+        "name": "Car Wash Bay"
+    },
+    {
+        "name": "Convenience Store"
+    },
+    {
+        "name": "Supplies Storage"
+    },
+    {
+        "name": "Sales Counter"
+    },
+    {
+        "name": "Electronics Shop Packing Station"
+    },
+    {
+        "name": "Meat Department"
+    },
+    {
+        "name": "Aisle"
+    },
+    {
+        "name": "Barber Shop"
+    },
+    {
+        "name": "Gift Shop"
+    },
+    {
+        "name": "Diet Store"
+    },
+    {
+        "name": "Electronics Shop Workspace"
+    },
+    {
+        "name": "Home Library"
+    },
+    {
+        "name": "Sewing Factory Workshop"
+    },
+    {
+        "name": "Training Area"
+    },
+    {
+        "name": "Laundry Shop Folding Station"
+    },
+    {
+        "name": "School Supplies Section"
+    },
+    {
+        "name": "Packing Room"
+    },
+    {
+        "name": "Bookshelf Area"
+    },
+    {
+        "name": "Display Counter"
+    },
+    {
+        "name": "Shipping Area"
+    },
+    {
+        "name": "Workshop Yard"
+    },
+    {
+        "name": "Diagnostic Area"
+    },
+    {
+        "name": "Butcher Shop"
+    },
+    {
+        "name": "Study Area"
+    },
+    {
+        "name": "Breakfast Area"
+    },
+    {
+        "name": "Small Animal Section"
+    },
+    {
+        "name": "Dyeing Area"
+    },
+    {
+        "name": "Department Store Distribution"
+    },
+    {
+        "name": "Fish Room"
+    },
+    {
+        "name": "Refilling Station"
+    },
+    {
+        "name": "Food Stall Kitchen"
+    },
+    {
+        "name": "Welding Area"
+    },
+    {
+        "name": "Component Storage"
+    },
+    {
+        "name": "Electronics Shop Counter"
+    },
+    {
+        "name": "Tooling Station"
+    },
+    {
+        "name": "Craft Store"
+    },
+    {
+        "name": "Takeout Food"
+    },
+    {
+        "name": "Production Room"
+    },
+    {
+        "name": "Bedroom Section"
+    },
+    {
+        "name": "Oven Area"
+    },
+    {
+        "name": "Perfume Shop"
+    },
+    {
+        "name": "Fish Section"
+    },
+    {
+        "name": "Processing Station"
+    },
+    {
+        "name": "Factory Workstation"
+    },
+    {
+        "name": "Garden Supplies Section"
+    },
+    {
+        "name": "Restaurant Packaging Station"
+    },
+    {
+        "name": "Coffee Shop Kitchen"
+    },
+    {
+        "name": "Patio Table"
+    },
+    {
+        "name": "Perfume Station"
+    },
+    {
+        "name": "Pot Section"
+    },
+    {
+        "name": "Shoe Store"
+    },
+    {
+        "name": "Electronics Shop Wrapping Station"
+    },
+    {
+        "name": "Perfume Making Station"
+    },
+    {
+        "name": "Weeding Area"
+    },
+    {
+        "name": "Brickyard Workshop"
+    },
+    {
+        "name": "Counter Area"
+    },
+    {
+        "name": "Loading Dock"
+    },
+    {
+        "name": "Garage Workshop"
+    },
+    {
+        "name": "Sunroom"
+    },
+    {
+        "name": "Brickyard"
+    },
+    {
+        "name": "Coffee Station"
+    },
+    {
+        "name": "Indoor Room"
+    },
+    {
+        "name": "Mudroom"
+    },
+    {
+        "name": "Basement"
+    },
+    {
+        "name": "Walk In Closet"
+    },
+    {
+        "name": "Attic"
+    },
+    {
+        "name": "Ironing Area"
+    },
+    {
+        "name": "Stairwell"
+    },
+    {
+        "name": "Home Interior"
+    },
+    {
+        "name": "The Street"
+    },
+    {
+        "name": "Window Area"
+    },
+    {
+        "name": "Study Desk"
+    },
+    {
+        "name": "Computer Desk"
+    },
+    {
+        "name": "Gaming Setup"
+    },
+    {
+        "name": "Kitchenette"
+    },
+    {
+        "name": "Cluttered Room"
+    },
+    {
+        "name": "Park"
+    },
+    {
+        "name": "Staircase"
+    },
+    {
+        "name": "Kitchen Storage Area"
+    },
+    {
+        "name": "Refrigerator Area"
+    },
+    {
+        "name": "Beach"
+    },
+    {
+        "name": "Supermarket"
+    },
+    {
+        "name": "Family Room"
+    },
+    {
+        "name": "Outdoor Sink"
+    },
+    {
+        "name": "Indoor Workspace"
+    },
+    {
+        "name": "Meeting Room"
+    },
+    {
+        "name": "Yard"
+    },
+    {
+        "name": "Sharpening Area"
+    },
+    {
+        "name": "Outdoor Walkway"
+    },
+    {
+        "name": "Home Room"
+    },
+    {
+        "name": "Closet Area"
+    },
+    {
+        "name": "Outdoor Wash Area"
+    },
+    {
+        "name": "Outdoor Garden"
+    },
+    {
+        "name": "Home Gym"
+    },
+    {
+        "name": "Pool Area"
+    },
+    {
+        "name": "Supermarket Aisle"
+    },
+    {
+        "name": "Bedroom Floor"
+    },
+    {
+        "name": "Childs Bedroom"
+    },
+    {
+        "name": "Warehouse Storage"
+    },
+    {
+        "name": "Dressing Area"
+    },
+    {
+        "name": "Hobby Room"
+    },
+    {
+        "name": "Outdoor Yard"
+    },
+    {
+        "name": "Dressing Room"
+    },
+    {
+        "name": "Office Desk Area"
+    },
+    {
+        "name": "Carpeted Room"
+    },
+    {
+        "name": "Outdoor Lawn"
+    },
+    {
+        "name": "Chrysanthemum Field"
+    },
+    {
+        "name": "Doorway"
+    },
+    {
+        "name": "Home Patio"
+    },
+    {
+        "name": "Indoor Area"
+    },
+    {
+        "name": "Messy Room"
+    },
+    {
+        "name": "Office Area"
+    },
+    {
+        "name": "Terrace"
+    },
+    {
+        "name": "Work Desk"
+    },
+    {
+        "name": "Living Area"
+    },
+    {
+        "name": "Sink Area"
+    },
+    {
+        "name": "Kitchen and Dining Room"
+    },
+    {
+        "name": "Kitchen Drawer"
+    },
+    {
+        "name": "Room Corner"
+    },
+    {
+        "name": "Kitchen Cabinet"
+    },
+    {
+        "name": "Kitchen Corner"
+    },
+    {
+        "name": "Outdoor Laundry Area"
+    },
+    {
+        "name": "Outdoor Path"
+    },
+    {
+        "name": "Plant Corner"
+    },
+    {
+        "name": "Poolside Patio"
+    },
+    {
+        "name": "Vanity Area"
+    },
+    {
+        "name": "Washroom"
+    },
+    {
+        "name": "Bedroom Office"
+    },
+    {
+        "name": "Coffee Shop"
+    },
+    {
+        "name": "Desk Workspace"
+    },
+    {
+        "name": "Grocery Store Warehouse"
+    },
+    {
+        "name": "Hobby Area"
+    },
+    {
+        "name": "Outdoor Courtyard"
+    },
+    {
+        "name": "Shower"
+    },
+    {
+        "name": "Studio"
+    },
+    {
+        "name": "Art Studio"
+    },
+    {
+        "name": "Basement Kitchen"
+    },
+    {
+        "name": "Hobby Workspace"
+    },
+    {
+        "name": "Outdoor Entrance"
+    },
+    {
+        "name": "Room Entrance"
+    },
+    {
+        "name": "Cluttered Workspace"
+    },
+    {
+        "name": "Gaming Room"
+    },
+    {
+        "name": "Home Desk"
+    },
+    {
+        "name": "Kitchen Living Area"
+    },
+    {
+        "name": "Outdoor Utility Area"
+    },
+    {
+        "name": "Scullery"
+    },
+    {
+        "name": "Sharpening Station"
+    },
+    {
+        "name": "Bathroom Sink"
+    },
+    {
+        "name": "Bedroom Desk"
+    },
+    {
+        "name": "Craft Desk"
+    },
+    {
+        "name": "Factory"
+    },
+    {
+        "name": "Home Corner"
+    },
+    {
+        "name": "Indoor Living Area"
+    },
+    {
+        "name": "Laundry Patio"
+    },
+    {
+        "name": "Lawn"
+    },
+    {
+        "name": "Outdoor Driveway"
+    },
+    {
+        "name": "Outdoor Stairs"
+    },
+    {
+        "name": "Shoe Storage Area"
+    },
+    {
+        "name": "Tailor Shop"
+    },
+    {
+        "name": "Breakroom"
+    },
+    {
+        "name": "Cafe Home"
+    },
+    {
+        "name": "Desk Table"
+    },
+    {
+        "name": "Guest Bedroom"
+    },
+    {
+        "name": "Half Bathroom"
+    },
+    {
+        "name": "Hobby Desk"
+    },
+    {
+        "name": "Home Living Room"
+    },
+    {
+        "name": "Home Table"
+    },
+    {
+        "name": "Kitchen Counter Sink"
+    },
+    {
+        "name": "Kitchen Laundry Area"
+    },
+    {
+        "name": "Kitchen Utility Area"
+    },
+    {
+        "name": "Kitchen Window"
+    },
+    {
+        "name": "Office Workstation"
+    },
+    {
+        "name": "Outdoor Porch"
+    },
+    {
+        "name": "Outdoor Washing Area"
+    },
+    {
+        "name": "Patio Table Area"
+    },
+    {
+        "name": "Rooftop"
+    },
+    {
+        "name": "Shoe Rack Area"
+    },
+    {
+        "name": "Stairs"
+    },
+    {
+        "name": "Utility Closet"
+    },
+    {
+        "name": "Utility Corner"
+    },
+    {
+        "name": "Workroom"
+    },
+    {
+        "name": "Art Workspace"
+    },
+    {
+        "name": "Balcony Entrance"
+    },
+    {
+        "name": "Bedroom and Entryway"
+    },
+    {
+        "name": "Bedroom Closet"
+    },
+    {
+        "name": "Cluttered Desk"
+    },
+    {
+        "name": "Conference Room"
+    },
+    {
+        "name": "Craft Room Table"
+    },
+    {
+        "name": "Craft Workspace"
+    },
+    {
+        "name": "Domestic Room"
+    },
+    {
+        "name": "Drawer"
+    },
+    {
+        "name": "Electronics Workshop"
+    },
+    {
+        "name": "Entrance Area"
+    },
+    {
+        "name": "Floral Studio"
+    },
+    {
+        "name": "Gaming Desk"
+    },
+    {
+        "name": "General Room Area"
+    },
+    {
+        "name": "Grassy Field"
+    },
+    {
+        "name": "Home Bedroom"
+    },
+    {
+        "name": "Home Garden"
+    },
+    {
+        "name": "Home Laundry Area"
+    },
+    {
+        "name": "Home Study"
+    },
+    {
+        "name": "Indoor Floor"
+    },
+    {
+        "name": "Makeup Area"
+    },
+    {
+        "name": "Master Bathroom"
+    },
+    {
+        "name": "Master Bedroom"
+    },
+    {
+        "name": "Nail Salon"
+    },
+    {
+        "name": "Nail Studio"
+    },
+    {
+        "name": "Outdoor Alley"
+    },
+    {
+        "name": "Outdoor Entryway"
+    },
+    {
+        "name": "Outdoor Kitchen"
+    },
+    {
+        "name": "Outdoor Oven"
+    },
+    {
+        "name": "Outdoor Pathway"
+    },
+    {
+        "name": "Outdoor Work Area"
+    },
+    {
+        "name": "Park Garden"
+    },
+    {
+        "name": "Pet Store"
+    },
+    {
+        "name": "Rooftop Garden"
+    },
+    {
+        "name": "Room Access"
+    },
+    {
+        "name": "Sidewalk"
+    },
+    {
+        "name": "Staircase Landing"
+    },
+    {
+        "name": "Stairway"
+    },
+    {
+        "name": "Tiled Patio"
+    },
+    {
+        "name": "Unfinished Room"
+    },
+    {
+        "name": "Wardrobe"
+    },
+    {
+        "name": "Wooden Table"
+    },
+    {
+        "name": "Work Table"
+    },
+    {
+        "name": "Activity Room"
+    },
+    {
+        "name": "Any Room"
+    },
+    {
+        "name": "Apartment"
+    },
+    {
+        "name": "Apartment Balcony"
+    },
+    {
+        "name": "Apartment Interior"
+    },
+    {
+        "name": "Art Area"
+    },
+    {
+        "name": "Art Desk"
+    },
+    {
+        "name": "Attic Laundry Area"
+    },
+    {
+        "name": "Backyard Workshop"
+    },
+    {
+        "name": "Balcony and Bathroom"
+    },
+    {
+        "name": "Balcony and Garden"
+    },
+    {
+        "name": "Balcony Door"
+    },
+    {
+        "name": "Balcony Nook"
+    },
+    {
+        "name": "Beauty Station"
+    },
+    {
+        "name": "Bedroom 2"
+    },
+    {
+        "name": "Bedroom Area"
+    },
+    {
+        "name": "Bedroom;balcony"
+    },
+    {
+        "name": "Bedroom;bathroom"
+    },
+    {
+        "name": "Building"
+    },
+    {
+        "name": "Circulation Desk"
+    },
+    {
+        "name": "Common Area"
+    },
+    {
+        "name": "Computer Room"
+    },
+    {
+        "name": "Craft Room/desk"
+    },
+    {
+        "name": "Craft Table"
+    },
+    {
+        "name": "Crafting Desk"
+    },
+    {
+        "name": "Display Cabinet"
+    },
+    {
+        "name": "Electronics Store"
+    },
+    {
+        "name": "Electronics Workbench"
+    },
+    {
+        "name": "Entertainment Area"
+    },
+    {
+        "name": "Entrance Hall"
+    },
+    {
+        "name": "Entryway and Hallway"
+    },
+    {
+        "name": "Factory Floor"
+    },
+    {
+        "name": "Factory Storage"
+    },
+    {
+        "name": "Floral Workshop"
+    },
+    {
+        "name": "Garage/utility Room"
+    },
+    {
+        "name": "Garden Bed"
+    },
+    {
+        "name": "Garden Entrance"
+    },
+    {
+        "name": "Garden Patch"
+    },
+    {
+        "name": "Garden Patio"
+    },
+    {
+        "name": "Garden Walkway"
+    },
+    {
+        "name": "Gate Area"
+    },
+    {
+        "name": "Grocery Area"
+    },
+    {
+        "name": "Home Balcony"
+    },
+    {
+        "name": "Home Entrance"
+    },
+    {
+        "name": "Home Indoor"
+    },
+    {
+        "name": "Home Outdoor"
+    },
+    {
+        "name": "Home Porch"
+    },
+    {
+        "name": "Home Prep Area"
+    },
+    {
+        "name": "Home Setting"
+    },
+    {
+        "name": "Home Yard"
+    },
+    {
+        "name": "House Exterior"
+    },
+    {
+        "name": "Indoor Craft Area"
+    },
+    {
+        "name": "Indoor Garden"
+    },
+    {
+        "name": "Indoor Space"
+    },
+    {
+        "name": "Indoor Workshop"
+    },
+    {
+        "name": "ki tchen"
+    },
+    {
+        "name": "Kids Bedroom"
+    },
+    {
+        "name": "Kitchen and Entryway"
+    },
+    {
+        "name": "Kitchen and Living Room"
+    },
+    {
+        "name": "Kitchen Counter;dining Table"
+    },
+    {
+        "name": "Kitchen Counter;dining Table;cabinet"
+    },
+    {
+        "name": "Kitchen Island"
+    },
+    {
+        "name": "Kitchen Laundry"
+    },
+    {
+        "name": "Kitchen Nook"
+    },
+    {
+        "name": "Kitchen Patio"
+    },
+    {
+        "name": "Kitchen Storage"
+    },
+    {
+        "name": "Laundry Balcony"
+    },
+    {
+        "name": "Laundry Room;hallway"
+    },
+    {
+        "name": "Living Room Kitchen Area"
+    },
+    {
+        "name": "Living Room/table"
+    },
+    {
+        "name": "Lounge"
+    },
+    {
+        "name": "Makeshift Kitchen"
+    },
+    {
+        "name": "Office Cubicle"
+    },
+    {
+        "name": "Outdoor Alleyway"
+    },
+    {
+        "name": "Outdoor Corner"
+    },
+    {
+        "name": "Outdoor Pavement"
+    },
+    {
+        "name": "Outdoor Storage"
+    },
+    {
+        "name": "Outdoors"
+    },
+    {
+        "name": "Packaging Room"
+    },
+    {
+        "name": "Patio Balcony"
+    },
+    {
+        "name": "Patio Dining Area"
+    },
+    {
+        "name": "Residential Home"
+    },
+    {
+        "name": "Retail Bathroom"
+    },
+    {
+        "name": "Retail Store Backroom"
+    },
+    {
+        "name": "Retail Store Bathroom"
+    },
+    {
+        "name": "Retail Toy Section"
+    },
+    {
+        "name": "Roadside"
+    },
+    {
+        "name": "Rooftop Balcony"
+    },
+    {
+        "name": "Shelf Area"
+    },
+    {
+        "name": "Shoe Cleaning Area"
+    },
+    {
+        "name": "Shoe Closet"
+    },
+    {
+        "name": "Sitting Room"
+    },
+    {
+        "name": "Small Room"
+    },
+    {
+        "name": "Staircase and Dining Area"
+    },
+    {
+        "name": "Staircase Area"
+    },
+    {
+        "name": "Stairwell Landing"
+    },
+    {
+        "name": "Storage Cabinet"
+    },
+    {
+        "name": "Studio Apartment"
+    },
+    {
+        "name": "Studio Area"
+    },
+    {
+        "name": "Study"
+    },
+    {
+        "name": "Study Table"
+    },
+    {
+        "name": "Table Top"
+    },
+    {
+        "name": "Tailor Workshop"
+    },
+    {
+        "name": "Tailoring Room"
+    },
+    {
+        "name": "Textile Workshop"
+    },
+    {
+        "name": "Tiled Room"
+    },
+    {
+        "name": "Toilet Room"
+    },
+    {
+        "name": "Vegetable Field"
+    },
+    {
+        "name": "Veranda"
+    },
+    {
+        "name": "Waiting Room"
+    },
+    {
+        "name": "Warehouse Kitchen"
+    },
+    {
+        "name": "Wooden Cabinet"
+    },
+    {
+        "name": "Workshop Desk"
+    },
+    {
+        "name": "Workshop Storage"
+    },
+    {
+        "name": "Data Hall Rack Row"
+    },
+    {
+        "name": "Network Rack Row"
+    },
+    {
+        "name": "Cable Prep Bench"
+    },
+    {
+        "name": "Label or Scan Station"
+    },
+    {
+        "name": "Switchgear Room"
+    },
+    {
+        "name": "Electrical Room"
+    },
+    {
+        "name": "MCC or Control Room"
+    },
+    {
+        "name": "Commissioning Bay"
+    },
+    {
+        "name": "Equipment Pad"
+    },
+    {
+        "name": "Overhead Cable-Tray Corridor"
+    },
+    {
+        "name": "Ladder-Rack Run"
+    },
+    {
+        "name": "Lift-Assisted Installation Zone"
+    },
+    {
+        "name": "Site Tool Crib"
+    },
+    {
+        "name": "Material Laydown Area"
+    },
+    {
+        "name": "Rack Build Bay"
+    },
+    {
+        "name": "Rack Integration Bay"
+    },
+    {
+        "name": "Tray or Rack Subassembly Cell"
+    },
+    {
+        "name": "Rail-Insertion Station"
+    },
+    {
+        "name": "Cooling-Hose Connection Station"
+    },
+    {
+        "name": "Rack Test Bay"
+    },
+    {
+        "name": "QA Station"
+    },
+    {
+        "name": "Electromechanical Assembly Cell"
+    },
+    {
+        "name": "Fixture or Press Station"
+    },
+    {
+        "name": "Adhesive or Lubricant Dispense Station"
+    },
+    {
+        "name": "Torque Station"
+    },
+    {
+        "name": "Harness Board Station"
+    },
+    {
+        "name": "Cut/Strip/Crimp Station"
+    },
+    {
+        "name": "Connector-Mating Station"
+    },
+    {
+        "name": "Cable-Dressing Bench"
+    },
+    {
+        "name": "CNC Cell"
+    },
+    {
+        "name": "Machine-Tending Station"
+    },
+    {
+        "name": "Fixture-Loading Area"
+    },
+    {
+        "name": "Chip-Cleanout Area"
+    },
+    {
+        "name": "Deburr or Wash Station"
+    },
+    {
+        "name": "Metrology Bench"
+    },
+    {
+        "name": "Electrical Test Station"
+    },
+    {
+        "name": "Leak or Pressure Test Station"
+    },
+    {
+        "name": "Continuity or Pinout Test Station"
+    },
+    {
+        "name": "Kitting Area"
+    },
+    {
+        "name": "Bin Replenishment Zone"
+    },
+    {
+        "name": "Line-Side Supermarket"
+    },
+    {
+        "name": "WIP Aisle"
+    },
+    {
+        "name": "Machine Queue"
+    },
+    {
+        "name": "Inspection or Test Queue"
+    },
+    {
+        "name": "Rework Area"
+    },
+    {
+        "name": "Quarantine or Hold Area"
+    },
+    {
+        "name": "Tool Crib"
+    },
+    {
+        "name": "Changeover Staging Area"
+    },
+    {
+        "name": "Calibration Area"
+    },
+    {
+        "name": "Media or Buffer Preparation Room"
+    },
+    {
+        "name": "Weighing and Dispensing Bench"
+    },
+    {
+        "name": "Mixing Vessel Station"
+    },
+    {
+        "name": "Assay Setup Bench"
+    },
+    {
+        "name": "Liquid-Handling Workstation"
+    },
+    {
+        "name": "Plate or Tip or Reagent Setup Zone"
+    },
+    {
+        "name": "Centrifuge Bay"
+    },
+    {
+        "name": "Incubator Bay"
+    },
+    {
+        "name": "Plate Washer Station"
+    },
+    {
+        "name": "Analytical Instrument Room"
+    },
+    {
+        "name": "Autosampler Station"
+    },
+    {
+        "name": "Bioprocess Production Suite"
+    },
+    {
+        "name": "Single-Use Assembly Station"
+    },
+    {
+        "name": "Closed-Sampling Gate"
+    },
+    {
+        "name": "Integrity or Leak-Check Station"
+    },
+    {
+        "name": "Fill-Finish Suite"
+    },
+    {
+        "name": "Vial or Syringe Infeed"
+    },
+    {
+        "name": "Line-Clearance Zone"
+    },
+    {
+        "name": "Workcell Reset or Decontamination Zone"
+    },
+    {
+        "name": "Material Airlock"
+    },
+    {
+        "name": "Pass-Through"
+    },
+    {
+        "name": "De-Bagging or Wipe-Down Station"
+    },
+    {
+        "name": "Refrigerator or Freezer Room"
+    },
+    {
+        "name": "Cryostorage Aisle"
+    },
+    {
+        "name": "Controlled Handoff Zone"
+    },
+    {
+        "name": "Biosafety-Cabinet or Closed Cell-Culture Workcell"
+    },
+    {
+        "name": "Culture-Vessel Staging"
+    },
+    {
+        "name": "Cell-Counting and Reseeding Bench"
+    },
+    {
+        "name": "Controlled-Rate Freezing and Thaw Station"
+    },
+    {
+        "name": "Cryovial Labeling Area"
+    },
+    {
+        "name": "TFF or Sterile-Filtration Skid"
+    },
+    {
+        "name": "Flow-Kit Installation Station"
+    },
+    {
+        "name": "Chromatography Column Packing Station"
+    },
+    {
+        "name": "Downflow Booth or Isolator"
+    },
+    {
+        "name": "Contained Raw-Material Weigh and Dispense Station"
+    },
+    {
+        "name": "Contained Specimen-Preparation Station"
+    },
+    {
+        "name": "Tissue Dissociation or Homogenization Area"
+    },
+    {
+        "name": "Microbiology Containment Cabinet"
+    },
+    {
+        "name": "Plating or Streaking Bench"
+    },
+    {
+        "name": "Tablet-Press or Capsule-Filler Changeover Bay"
+    },
+    {
+        "name": "Microscope or Imaging Station"
+    },
+    {
+        "name": "Named Handoff Zone"
+    },
+    {
+        "name": "Controlled Corridor or Route"
+    },
+    {
+        "name": "Queue or Staging Area"
+    },
+    {
+        "name": "Return or Reconciliation Area"
+    },
+    {
+        "name": "Supervisor Review Area"
+    },
+    {
+        "name": "Standard-Work Station"
+    },
+    {
+        "name": "Plan Board or HMI Station"
+    },
+    {
+        "name": "Startup Approval Gate"
+    }
+]
