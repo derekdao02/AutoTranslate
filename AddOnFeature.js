@@ -2143,41 +2143,103 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
 
     let poolCapacityState = {
         held: 0,
-        max: 0
+        max: 0,
+        total: 0
     };
 
-    function updatePoolCapacityUI(held, max) {
+    function updatePoolCapacityUI(held, max, total) {
         poolCapacityState.held = Number(held) || 0;
         poolCapacityState.max = Number(max) || 0;
+        poolCapacityState.total = Number(total) || 0;
 
-        const el = document.getElementById('tb-pool-capacity-display');
-        if (!el) return;
+        const heldEl = document.getElementById(
+            'tb-pool-capacity-display'
+        );
+
+        const totalEl = document.getElementById(
+            'tb-pool-total-display'
+        );
 
         const hasHeld = poolCapacityState.held > 0;
 
-        el.textContent =
-            `Held ${poolCapacityState.held}/${poolCapacityState.max}`;
+        if (heldEl) {
+            heldEl.innerHTML = hasHeld
+                ? `<span style="
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+              background: #00bf81;
+              display: inline-block;
+              flex-shrink: 0;
+           "></span>
+           <span>Held ${poolCapacityState.held}/${poolCapacityState.max}</span>`
+                : `<span>Held ${poolCapacityState.held}/${poolCapacityState.max}</span>`;
 
-        el.style.color =
-            hasHeld
-                ? '#ffffff'
-                : '#94a3b8';
+            heldEl.style.gap = '5px';
 
-        el.style.backgroundColor =
-            hasHeld
-                ? '#00bf81'
-                : 'rgba(71, 85, 105, 0.20)';
+            heldEl.style.color =
+                hasHeld ? '#39e6ad' : '#94a3b8';
 
-        el.style.borderColor =
-            hasHeld
-                ? '#00bf81'
-                : 'rgba(148, 163, 184, 0.20)';
+            heldEl.style.backgroundColor =
+                hasHeld
+                    ? 'rgba(0, 191, 129, 0.13)'
+                    : 'rgba(71, 85, 105, 0.20)';
 
-        el.style.boxShadow = 'none';
+            heldEl.style.borderColor =
+                hasHeld
+                    ? 'rgba(0, 191, 129, 0.20)'
+                    : 'rgba(148, 163, 184, 0.20)';
+        }
 
-        el.title =
-            `Task capacity: ${poolCapacityState.held}/${poolCapacityState.max}`;
+        if (totalEl) {
+            const hasData = poolCapacityState.total > 0;
+
+            totalEl.innerHTML = hasData
+                ? `<span style="
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+              background: #3b82f6;
+              display: inline-block;
+              flex-shrink: 0;
+           "></span>
+           <span>Total ${poolCapacityState.total}</span>`
+                : `<span>Total ${poolCapacityState.total}</span>`;
+
+            totalEl.style.gap = '5px';
+
+            totalEl.style.color =
+                hasData ? '#93c5fd' : '#94a3b8';
+
+            totalEl.style.backgroundColor =
+                hasData
+                    ? 'rgba(59, 130, 246, 0.13)'
+                    : 'rgba(71, 85, 105, 0.20)';
+
+            totalEl.style.borderColor =
+                hasData
+                    ? 'rgba(59, 130, 246, 0.20)'
+                    : 'rgba(148, 163, 184, 0.20)';
+        }
     }
+
+    // const mocks = [
+    //     [0, 1, 0],
+    //     [0, 1, 5],
+    //     [1, 1, 5],
+    // ];
+
+    // let i = 0;
+
+    // setInterval(() => {
+    //     const [held, max, total] = mocks[i];
+
+    //     updatePoolCapacityUI(held, max, total);
+
+    //     console.log(`Mock: Held ${held}/${max} | Total ${total}`);
+
+    //     i = (i + 1) % mocks.length;
+    // }, 2000);
 
     async function fetchPool(token) {
         await waitForRateLimit();
@@ -2277,9 +2339,12 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         // ============================================================
         const held = Number(body?.status?.capacity?.held);
         const max = Number(body?.status?.capacity?.max);
+        const total = Array.isArray(body?.data)
+            ? body.data.length
+            : 0;
 
         if (Number.isFinite(held) && Number.isFinite(max)) {
-            updatePoolCapacityUI(held, max);
+            updatePoolCapacityUI(held, max, total);
         }
 
         const tasks = extractTasks(body);
@@ -2678,10 +2743,40 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
 
         wrapper.appendChild(capacityDisplay);
 
+        const totalDisplay = document.createElement("span");
+
+        totalDisplay.id = "tb-pool-total-display";
+
+        totalDisplay.textContent =
+            `Total ${poolCapacityState.total}`;
+
+        totalDisplay.style.cssText = `
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 7px;
+
+            border: 1px solid rgba(148, 163, 184, 0.20);
+            border-radius: 7px;
+
+            background: rgba(71, 85, 105, 0.20);
+            color: #94a3b8;
+
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+        `;
+
+        wrapper.appendChild(totalDisplay);
+
         updatePoolCapacityUI(
             poolCapacityState.held,
-            poolCapacityState.max
+            poolCapacityState.max,
+            poolCapacityState.total
         );
+
 
         // ============================================================
         // TAKE TASK BUTTON
