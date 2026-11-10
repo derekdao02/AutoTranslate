@@ -2141,6 +2141,44 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         return id != null ? String(id) : null;
     }
 
+    let poolCapacityState = {
+        held: 0,
+        max: 0
+    };
+
+    function updatePoolCapacityUI(held, max) {
+        poolCapacityState.held = Number(held) || 0;
+        poolCapacityState.max = Number(max) || 0;
+
+        const el = document.getElementById('tb-pool-capacity-display');
+        if (!el) return;
+
+        const hasHeld = poolCapacityState.held > 0;
+
+        el.textContent =
+            `Held ${poolCapacityState.held}/${poolCapacityState.max}`;
+
+        el.style.color =
+            hasHeld
+                ? '#ffffff'
+                : '#94a3b8';
+
+        el.style.backgroundColor =
+            hasHeld
+                ? '#00bf81'
+                : 'rgba(71, 85, 105, 0.20)';
+
+        el.style.borderColor =
+            hasHeld
+                ? '#00bf81'
+                : 'rgba(148, 163, 184, 0.20)';
+
+        el.style.boxShadow = 'none';
+
+        el.title =
+            `Task capacity: ${poolCapacityState.held}/${poolCapacityState.max}`;
+    }
+
     async function fetchPool(token) {
         await waitForRateLimit();
         const controller = new AbortController();
@@ -2228,7 +2266,21 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         if (!response.ok) return getAdaptivePollInterval();
 
         let body;
-        try { body = await response.json(); } catch (_) { return getAdaptivePollInterval(); }
+        try {
+            body = await response.json();
+        } catch (_) {
+            return getAdaptivePollInterval();
+        }
+
+        // ============================================================
+        // POOL CAPACITY: held / max
+        // ============================================================
+        const held = Number(body?.status?.capacity?.held);
+        const max = Number(body?.status?.capacity?.max);
+
+        if (Number.isFinite(held) && Number.isFinite(max)) {
+            updatePoolCapacityUI(held, max);
+        }
 
         const tasks = extractTasks(body);
         if (!tasks) return getAdaptivePollInterval();
@@ -2586,6 +2638,50 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             earningsDisplay
         );
 
+        // ============================================================
+        // POOL CAPACITY
+        // ============================================================
+
+        const capacityDisplay =
+            document.createElement("span");
+
+        capacityDisplay.id =
+            "tb-pool-capacity-display";
+
+        capacityDisplay.textContent =
+            `Held ${poolCapacityState.held}/${poolCapacityState.max}`;
+
+        capacityDisplay.style.cssText = `
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 7px;
+
+            border: 1px solid rgba(148, 163, 184, 0.20);
+            border-radius: 7px;
+
+            background: rgba(71, 85, 105, 0.20);
+            color: #94a3b8;
+
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+
+            transition:
+                color 0.15s ease,
+                background-color 0.15s ease,
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
+        `;
+
+        wrapper.appendChild(capacityDisplay);
+
+        updatePoolCapacityUI(
+            poolCapacityState.held,
+            poolCapacityState.max
+        );
 
         // ============================================================
         // TAKE TASK BUTTON
