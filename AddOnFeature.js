@@ -4639,6 +4639,99 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
     const tbUiObserver = new MutationObserver(scheduleTbUiRefresh);
     tbUiObserver.observe(document.documentElement, { childList: true, subtree: true });
     scheduleTbUiRefresh();
+
+    // =====================================================================
+    // CODE PATH: 12.5 - LOAD ADD-ON REPORT
+    // =====================================================================
+
+    const ADDON_REPORT_URL =
+        'https://raw.githubusercontent.com/derekdao02/AutoTranslate/refs/heads/main/AddOnReport.js';
+
+    async function loadAddOnReport() {
+        // Chống load trùng
+        if (window.__TB_ADDON_REPORT_LOADING__) return;
+        if (window.__TB_ADDON_REPORT_LOADED__) return;
+
+        window.__TB_ADDON_REPORT_LOADING__ = true;
+
+        try {
+            console.log('⏳ Loading AddOnReport.js...');
+
+            const response = await fetch(
+                ADDON_REPORT_URL,
+                {
+                    cache: 'no-store'
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `HTTP ${response.status} ${response.statusText}`
+                );
+            }
+
+            const code = await response.text();
+
+            if (!code.trim()) {
+                throw new Error('AddOnReport.js is empty');
+            }
+
+            // Chạy ở global scope.
+            // CSP hiện tại có 'unsafe-eval'.
+            (0, eval)(
+                `${code}\n//# sourceURL=AddOnReport.js`
+            );
+
+            window.__TB_ADDON_REPORT_LOADED__ = true;
+
+            console.log('✅ AddOnReport.js loaded successfully.');
+
+        } catch (error) {
+
+            window.__TB_ADDON_REPORT_LOADED__ = false;
+
+            console.error(
+                '❌ Failed to load AddOnReport.js:',
+                error
+            );
+
+        } finally {
+
+            window.__TB_ADDON_REPORT_LOADING__ = false;
+        }
+    }
+
+
+    // ============================================================
+    // LOAD SAU KHI PAGE LOAD XONG
+    // ============================================================
+
+    if (document.readyState === 'complete') {
+
+        loadAddOnReport();
+
+    } else {
+
+        window.addEventListener(
+            'load',
+            () => loadAddOnReport(),
+            { once: true }
+        );
+
+    }
+
+    // Nếu trang load xong rồi thì chạy luôn.
+    // Nếu chưa thì chờ toàn bộ page load xong.
+    if (document.readyState === 'complete') {
+        loadAddOnReport();
+    } else {
+        window.addEventListener(
+            'load',
+            loadAddOnReport,
+            { once: true }
+        );
+    }
+
     console.log('✅ Master Tbrain Script (No Tool in Activity) is ready.');
 
 
