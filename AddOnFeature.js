@@ -1016,6 +1016,7 @@ Sewing/upholstery workshop: measuring/cutting/sewing/stitching/aligning fabric -
 
     const PROMPT_EXAMPLES = `EXAMPLES (desc => skill | difficulty)
 Stacking finished bamboo baskets => Pick and Place / Object Handling | Easy
+Sewing fabric with a sewing machine and cutting threads with scissors => Clothing & Laundry | Hard
 Removing excess cardboard and stacking it => Pick and Place / Object Handling | Easy
 Adjusting the slotting machine for cardboard production => Tool Use & Technical Manipulation | Medium
 Weaving bamboo baskets by hand => Tool Use & Technical Manipulation | Hard
@@ -1596,6 +1597,50 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         btn.removeAttribute('title');
     }
 
+    // ============================================================
+    // AUTO DEFAULT: Setting = Indoor, Real work = Yes
+    // ============================================================
+    function applyDefaultEpisodeSettings(root = document) {
+        const clickGroupButton = (testId, text) => {
+            const group =
+                root.querySelector(`[data-testid="${testId}"]`) ||
+                document.querySelector(`[data-testid="${testId}"]`);
+
+            if (!group) {
+                console.warn(`[TBRAIN] Không tìm thấy ${testId}`);
+                return false;
+            }
+
+            const target = [...group.querySelectorAll('button')].find(
+                btn => btn.textContent.trim().toLowerCase() === text.toLowerCase()
+            );
+
+            if (!target) {
+                console.warn(`[TBRAIN] Không tìm thấy ${testId} -> ${text}`);
+                return false;
+            }
+
+            // Chỉ click khi chưa được chọn
+            if (target.getAttribute('aria-pressed') !== 'true') {
+                target.click();
+            }
+
+            return true;
+        };
+
+        // Setting -> Indoor
+        clickGroupButton(
+            'label-collection-setting',
+            'Indoor'
+        );
+
+        // Real work -> Yes
+        clickGroupButton(
+            'label-real-worker-status',
+            'Yes'
+        );
+    }
+
     // Điền 1 kết quả AI vào segment hiện tại (dùng chung cho Fill 1 và Fill All)
     async function applyResultToCurrentSegment(res, root = getCurrentSegmentRoot()) {
         const skillName = typeof res.skill === 'object' ? res.skill.name : res.skill;
@@ -1618,6 +1663,10 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             const sceneEl = getSceneElement(root);
             if (sceneEl) await setComboBoxValue(sceneEl, l3Val);
         }
+        // ========================================================
+        // DEFAULT SETTINGS
+        // ========================================================
+        applyDefaultEpisodeSettings(root);
     }
 
     // ---------- FILL 1 ----------
