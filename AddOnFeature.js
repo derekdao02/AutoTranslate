@@ -1003,7 +1003,7 @@ Easy = simple, repetitive, low dexterity (moving, stacking, wiping, packing).
 Medium = tool use, two-hand coordination, some precision or multiple steps, but NO measuring, diagnosis, calibration, or specialized technique.
 Hard = tight-tolerance or delicate work (narrow edges, curves, small parts, risk of damage), specialized skill, diagnosis, or heavy/awkward controlled handling.
 If truly unsure between Medium and Hard -> Hard. Otherwise keep Medium.
-Full example: "Cắt tóc và cạo tóc bằng kéo" -> {"desc":"Cutting and shaving hair with scissors","act":"hair-cutting-shaving","skill":"Healthcare & Caregiving","difficulty":"Hard"}`;
+Full example: "Cắt tóc và cạo tóc bằng kéo" -> {"desc":"Cutting and shaving hair with scissors","act":"hair-cutting-shaving","skill":"Healthcare & Caregiving","difficulty":"Hard"}{"desc":"Sewing fabric with a sewing machine and cutting threads with scissors","act":"fabric-sewing-threads-cutting","skill":"Clothing & Laundry","difficulty":"Hard"}`;
 
     // ---------- 04.3 COMMON SITE RULES + EXAMPLES ----------
     // Thêm site mới = thêm 1 dòng vào PROMPT_SITES + 1-2 ví dụ vào PROMPT_EXAMPLES
