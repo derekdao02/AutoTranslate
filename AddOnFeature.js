@@ -2405,86 +2405,433 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
 
     // ============================================================
     // EMPTY POOL BACKOFF
-    // 50 lần Pool không có task -> nghỉ random 1-3 phút
+    // Random 50-100 lần Pool không có task
+    // -> nghỉ random 1-3 phút
     // ============================================================
     const MIN_EMPTY_POOL_LIMIT = 50;
     const MAX_EMPTY_POOL_LIMIT = 100;
 
-    const EMPTY_POOL_LIMIT =
-        Math.floor(
-            Math.random() * (MAX_EMPTY_POOL_LIMIT - MIN_EMPTY_POOL_LIMIT + 1)
-        ) + MIN_EMPTY_POOL_LIMIT;
-        
+    let emptyPoolLimit = getRandomEmptyPoolLimit();
+    let emptyPoolCount = 0;
+
     const EMPTY_POOL_PAUSE_MIN = 60 * 1000;       // 1 phút
     const EMPTY_POOL_PAUSE_MAX = 3 * 60 * 1000;   // 3 phút
 
-    let emptyPoolCount = 0;
+    function getRandomEmptyPoolLimit() {
+        return Math.floor(
+            Math.random() *
+            (
+                MAX_EMPTY_POOL_LIMIT -
+                MIN_EMPTY_POOL_LIMIT +
+                1
+            )
+        ) + MIN_EMPTY_POOL_LIMIT;
+    }
 
     function getEmptyPoolPause() {
         return Math.floor(
             Math.random() *
-            (EMPTY_POOL_PAUSE_MAX - EMPTY_POOL_PAUSE_MIN + 1)
+            (
+                EMPTY_POOL_PAUSE_MAX -
+                EMPTY_POOL_PAUSE_MIN +
+                1
+            )
         ) + EMPTY_POOL_PAUSE_MIN;
     }
 
-    async function runCycle() {
-        let candidate = findToken() || findToken(true);
-        if (!candidate) return TOKEN_RETRY_INTERVAL;
 
-        let response;
+    // ============================================================
+    // TASKS API
+    // Sau mỗi lần Pool thành công:
+    // chờ random 50-150ms rồi gọi Tasks API
+    // ============================================================
+    const TASKS_API_URL =
+        `${API_BASE}/api/v1/tasks?page=1&pageSize=20&projectId=${PROJECT_ID}`;
+
+    const TASKS_AFTER_POOL_MIN_DELAY = 50;
+    const TASKS_AFTER_POOL_MAX_DELAY = 150;
+
+    function getTasksAfterPoolDelay() {
+        return Math.floor(
+            Math.random() *
+            (
+                TASKS_AFTER_POOL_MAX_DELAY -
+                TASKS_AFTER_POOL_MIN_DELAY +
+                1
+            )
+        ) + TASKS_AFTER_POOL_MIN_DELAY;
+    }
+
+
+    // ============================================================
+    // CALL TASKS API
+    // Dùng origFetch để tránh đi qua fetch interceptor lần nữa
+    // ============================================================
+    async function callTasksApi(token) {
+        const controller = new AbortController();
+
+        const timeout = setTimeout(
+            () => controller.abort(),
+            REQUEST_TIMEOUT
+        );
+
         try {
-            response = await fetchPool(candidate.token);
-        } catch (_) {
-            return getAdaptivePollInterval();
-        }
+            console.log("[TASKS] Calling Tasks API...");
 
-        if (response.status === 401 || response.status === 403) {
-            rejectedTokens.add(candidate.token);
-            cachedTokenCandidate = null;
+            const response = await origFetch.call(
+                window,
+                TASKS_API_URL,
+                {
+                    method: "GET",
+
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "*/*"
+                    },
+
+                    credentials: "include",
+                    cache: "no-store",
+                    signal: controller.signal
+                }
+            );
+
+            // Đồng bộ rate-limit từ Tasks API
+            readRateLimitHeaders(response);
+
+            console.log(
+                `[TASKS] Response HTTP ${response.status}`
+            );
+
+            if (
+                response.status === 401 ||
+                response.status === 403
+            ) {
+                console.warn(
+                    `[TASKS] Authentication failed: HTTP ${response.status}`
+                );
+
+                return {
+                    ok: false,
+                    authError: true,
+                    status: response.status,
+                    data: null
+                };
+            }
+
+            if (!response.ok) {
+                console.warn(
+                    `[TASKS] Request failed: HTTP ${response.status}`
+                );
+
+                return {
+                    ok: false,
+                    authError: false,
+                    status: response.status,
+                    data: null
+                };
+            }
+
+            let data = null;
+
+            try {
+                data = await response.json();
+            } catch (error) {
+                console.warn(
+                    "[TASKS] Cannot parse JSON:",
+                    error
+                );
+            }
+
+            console.log(
+                "[TASKS] Success:",
+                data
+            );
+
+            return {
+                ok: true,
+                authError: false,
+                status: response.status,
+                data
+            };
+
+        } catch (error) {
+            if (error?.name === "AbortError") {
+                console.warn(
+                    `[TASKS] Request timeout after ${REQUEST_TIMEOUT}ms`
+                );
+            } else {
+                console.error(
+                    "[TASKS] Request error:",
+                    error
+                );
+            }
+
+            return {
+                ok: false,
+                authError: false,
+                status: 0,
+                data: null,
+                error
+            };
+
+        } finally {
+            clearTimeout(timeout);
+        }
+    }
+
+
+    // ============================================================
+    // RUN ONE COMPLETE CYCLE
+    //
+    // POOL
+    // -> chờ 50-150ms
+    // -> TASKS
+    // -> xử lý Pool
+    // -> chờ random polling delay
+    // -> POOL tiếp theo
+    // ============================================================
+    async function runCycle() {
+        const candidate =
+            findToken() ||
+            findToken(true);
+
+        if (!candidate) {
+            console.warn(
+                "[POOL] Token not found"
+            );
+
             return TOKEN_RETRY_INTERVAL;
         }
 
-        if (!response.ok) return getAdaptivePollInterval();
 
-        let body;
+        // ========================================================
+        // 1. CALL POOL API
+        // ========================================================
+        let response;
+
         try {
-            body = await response.json();
-        } catch (_) {
+            console.log("[POOL] Calling Pool API...");
+
+            response = await fetchPool(
+                candidate.token
+            );
+
+            console.log(
+                `[POOL] Response HTTP ${response.status}`
+            );
+
+        } catch (error) {
+            console.warn(
+                "[POOL] Request error:",
+                error
+            );
+
             return getAdaptivePollInterval();
         }
 
-        // ============================================================
-        // POOL CAPACITY: held / max
-        // ============================================================
-        const held = Number(body?.status?.capacity?.held);
-        const max = Number(body?.status?.capacity?.max);
-        const total = Array.isArray(body?.data)
-            ? body.data.length
-            : 0;
 
-        if (Number.isFinite(held) && Number.isFinite(max)) {
-            updatePoolCapacityUI(held, max, total);
+        // ========================================================
+        // 2. HANDLE POOL AUTH ERROR
+        // ========================================================
+        if (
+            response.status === 401 ||
+            response.status === 403
+        ) {
+            rejectedTokens.add(
+                candidate.token
+            );
+
+            cachedTokenCandidate = null;
+
+            return TOKEN_RETRY_INTERVAL;
         }
 
-        const tasks = extractTasks(body);
-        if (!tasks) return getAdaptivePollInterval();
 
+        // ========================================================
+        // 3. HANDLE OTHER POOL ERRORS
+        // ========================================================
+        if (!response.ok) {
+            console.warn(
+                `[POOL] Request failed: HTTP ${response.status}`
+            );
+
+            return getAdaptivePollInterval();
+        }
+
+
+        // ========================================================
+        // 4. PARSE POOL RESPONSE
+        // ========================================================
+        let body;
+
+        try {
+            body = await response.json();
+        } catch (error) {
+            console.warn(
+                "[POOL] Cannot parse JSON:",
+                error
+            );
+
+            return getAdaptivePollInterval();
+        }
+
+
+        // ========================================================
+        // 5. POOL XONG -> CHỜ RANDOM 50-150ms
+        //
+        // Lưu ý: file đã có const sleep ở Code Path 06.
+        // Không khai báo lại sleep ở đây.
+        // ========================================================
+        const tasksDelay =
+            getTasksAfterPoolDelay();
+
+        console.log(
+            `[POOL -> TASKS] Waiting ${tasksDelay}ms`
+        );
+
+        await sleep(tasksDelay);
+
+
+        // Nếu Take Task đã OFF trong lúc chờ thì không call tiếp
+        const isStillActive =
+            localStorage.getItem(STORAGE_KEYS.active) !== null
+                ? JSON.parse(
+                    localStorage.getItem(
+                        STORAGE_KEYS.active
+                    )
+                )
+                : true;
+
+        if (
+            !isStillActive ||
+            stopped
+        ) {
+            console.log(
+                "[POOL -> TASKS] Cancelled because Take Task is OFF"
+            );
+
+            return getAdaptivePollInterval();
+        }
+
+
+        // ========================================================
+        // 6. CALL TASKS API
+        // ========================================================
+        console.log(
+            "[POOL -> TASKS] Calling callTasksApi()"
+        );
+
+        const tasksApiResult =
+            await callTasksApi(
+                candidate.token
+            );
+
+        console.log(
+            "[POOL -> TASKS] callTasksApi() finished",
+            tasksApiResult
+        );
+
+
+        // Nếu token của Tasks API không hợp lệ
+        if (tasksApiResult?.authError) {
+            rejectedTokens.add(
+                candidate.token
+            );
+
+            cachedTokenCandidate = null;
+
+            return TOKEN_RETRY_INTERVAL;
+        }
+
+
+        // ========================================================
+        // 7. POOL CAPACITY: held / max / total
+        // ========================================================
+        const held = Number(
+            body?.status?.capacity?.held
+        );
+
+        const max = Number(
+            body?.status?.capacity?.max
+        );
+
+        const total =
+            Array.isArray(body?.data)
+                ? body.data.length
+                : 0;
+
+        if (
+            Number.isFinite(held) &&
+            Number.isFinite(max)
+        ) {
+            updatePoolCapacityUI(
+                held,
+                max,
+                total
+            );
+        }
+
+
+        // ========================================================
+        // 8. EXTRACT POOL TASKS
+        // ========================================================
+        const tasks = extractTasks(body);
+
+        if (!tasks) {
+            console.warn(
+                "[POOL] Task list not found in response"
+            );
+
+            return getAdaptivePollInterval();
+        }
+
+
+        // ========================================================
+        // 9. FILTER ELIGIBLE TASKS
+        // ========================================================
         const eligibleTasks = [];
+
         for (const task of tasks) {
             const id = getTaskId(task);
-            if (id === null || seenIds.has(id)) continue;
+
+            if (
+                id === null ||
+                seenIds.has(id)
+            ) {
+                continue;
+            }
+
             seenIds.add(id);
 
-            const duration = Number(task && task.durationSeconds);
-            if (Number.isFinite(duration) && duration > MIN_DURATION_SECONDS) {
+            const duration = Number(
+                task?.durationSeconds
+            );
+
+            if (
+                Number.isFinite(duration) &&
+                duration > MIN_DURATION_SECONDS
+            ) {
                 eligibleTasks.push(task);
             }
         }
 
-        // ============================================================
-        // CÓ TASK
-        // ============================================================
+
+        // ========================================================
+        // 10. CÓ TASK PHÙ HỢP
+        // ========================================================
         if (eligibleTasks.length > 0) {
+            emptyPoolCount = 0;
+
+            // Reset limit cho chu kỳ empty tiếp theo
+            emptyPoolLimit =
+                getRandomEmptyPoolLimit();
+
+            console.log(
+                `[POOL] Found ${eligibleTasks.length} eligible task(s)` +
+                ` -> reset empty counter` +
+                ` -> next empty limit: ${emptyPoolLimit}`
+            );
+
             if (AUTO_ACQUIRE) {
                 await acquireNew(
                     candidate.token,
@@ -2492,41 +2839,53 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
                 );
             }
 
-            emptyPoolCount = 0;
-            console.log(
-                `[POOL] Found ${eligibleTasks.length} eligible task(s) -> reset empty counter`
-            );
-
+            // Nếu acquire thành công thì
+            // turnOffAutoTakeTask() đã đặt stopped = true
             return getAdaptivePollInterval();
         }
 
-        // ============================================================
-        // KHÔNG CÓ TASK
-        // ============================================================
+
+        // ========================================================
+        // 11. KHÔNG CÓ TASK PHÙ HỢP
+        // ========================================================
         emptyPoolCount++;
 
         console.log(
-            `[POOL] Empty ${emptyPoolCount}/${EMPTY_POOL_LIMIT}`
+            `[POOL] Empty ${emptyPoolCount}/${emptyPoolLimit}`
         );
 
-        // Đủ 50 lần liên tiếp
-        if (emptyPoolCount >= EMPTY_POOL_LIMIT) {
 
+        // ========================================================
+        // 12. ĐẠT EMPTY LIMIT -> NGHỈ 1-3 PHÚT
+        // ========================================================
+        if (
+            emptyPoolCount >= emptyPoolLimit
+        ) {
             const pauseTime = getEmptyPoolPause();
 
             console.log(
-                `[POOL] Empty ${EMPTY_POOL_LIMIT} times -> ` +
-                `pause ${(pauseTime / 60000).toFixed(2)} minutes`
+                `[POOL] Empty ${emptyPoolLimit} times` +
+                ` -> pause ${(pauseTime / 60000).toFixed(2)} minutes`
             );
 
-            // Reset để sau khi nghỉ sẽ đếm lại từ đầu
             emptyPoolCount = 0;
 
-            // tick() sẽ dùng delay này để schedule lần call tiếp theo
+            // Mỗi chu kỳ nghỉ xong sẽ random lại limit 50-100
+            emptyPoolLimit = getRandomEmptyPoolLimit();
+
+            console.log(
+                `[POOL] Next empty limit: ${emptyPoolLimit}`
+            );
+
+            // tick() dùng pauseTime để chờ,
+            // sau đó tự gọi Pool lại
             return pauseTime;
         }
 
-        // Chưa đủ 50 lần -> tiếp tục polling bình thường
+        // ========================================================
+        // 13. CHƯA ĐẠT EMPTY LIMIT
+        // Chờ delay hiện tại rồi gọi Pool lại
+        // ========================================================
         return getAdaptivePollInterval();
     }
 
