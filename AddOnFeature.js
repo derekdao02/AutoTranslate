@@ -1965,7 +1965,15 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
     }
 
     function getAdaptivePollInterval() {
-        return Math.max(POLL_INTERVAL, MIN_SAFE_POLL_INTERVAL);
+        const minDelay = 1000;
+        const maxDelay = 3500;
+
+        const randomDelay =
+            Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+
+        console.log(`Random Time: ${randomDelay}`);
+
+        return Math.max(randomDelay, MIN_SAFE_POLL_INTERVAL);
     }
 
     const JWT_RE = /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
@@ -2323,6 +2331,37 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         }
     }
 
+    function turnOffAutoTakeTask() {
+        // Lưu trạng thái OFF
+        localStorage.setItem(
+            STORAGE_KEYS.active,
+            JSON.stringify(false)
+        );
+
+        // Dừng vòng poll tiếp theo
+        stopped = true;
+        clearTimeout(timer);
+        timer = null;
+
+        // Đồng bộ button Take Task trên UI
+        const wrapper = document.getElementById(
+            "tb-fetch-control-wrapper"
+        );
+
+        const btn = wrapper?.querySelector("button");
+
+        if (btn) {
+            btn.style.backgroundColor = "#475569";
+            btn.style.opacity = "0.88";
+            btn.title = "Auto Take Task: OFF";
+            btn.setAttribute("aria-pressed", "false");
+        }
+
+        console.log(
+            "🛑 [TBRAIN] Task acquired -> Auto Take Task OFF"
+        );
+    }
+
     async function acquireNew(token, taskList) {
         let successfullyAcquired = [];
         for (const taskObj of taskList) {
@@ -2332,7 +2371,14 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
                     id: res.id,
                     durationSeconds: taskObj.durationSeconds
                 });
+
+                // Có task thành công -> OFF Take Task ngay
+                turnOffAutoTakeTask();
+
+                // Không acquire thêm task khác trong batch này
+                break;
             }
+
         }
 
         if (successfullyAcquired.length > 0) {
@@ -2356,6 +2402,30 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
     let timer = null;
     let stopped = false;
     let cycleRunning = false;
+
+    // ============================================================
+    // EMPTY POOL BACKOFF
+    // 50 lần Pool không có task -> nghỉ random 1-3 phút
+    // ============================================================
+    const MIN_EMPTY_POOL_LIMIT = 50;
+    const MAX_EMPTY_POOL_LIMIT = 100;
+
+    const EMPTY_POOL_LIMIT =
+        Math.floor(
+            Math.random() * (MAX_EMPTY_POOL_LIMIT - MIN_EMPTY_POOL_LIMIT + 1)
+        ) + MIN_EMPTY_POOL_LIMIT;
+        
+    const EMPTY_POOL_PAUSE_MIN = 60 * 1000;       // 1 phút
+    const EMPTY_POOL_PAUSE_MAX = 3 * 60 * 1000;   // 3 phút
+
+    let emptyPoolCount = 0;
+
+    function getEmptyPoolPause() {
+        return Math.floor(
+            Math.random() *
+            (EMPTY_POOL_PAUSE_MAX - EMPTY_POOL_PAUSE_MIN + 1)
+        ) + EMPTY_POOL_PAUSE_MIN;
+    }
 
     async function runCycle() {
         let candidate = findToken() || findToken(true);
@@ -2411,12 +2481,52 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             }
         }
 
+        // ============================================================
+        // CÓ TASK
+        // ============================================================
         if (eligibleTasks.length > 0) {
             if (AUTO_ACQUIRE) {
-                await acquireNew(candidate.token, eligibleTasks);
+                await acquireNew(
+                    candidate.token,
+                    eligibleTasks
+                );
             }
+
+            emptyPoolCount = 0;
+            console.log(
+                `[POOL] Found ${eligibleTasks.length} eligible task(s) -> reset empty counter`
+            );
+
+            return getAdaptivePollInterval();
         }
 
+        // ============================================================
+        // KHÔNG CÓ TASK
+        // ============================================================
+        emptyPoolCount++;
+
+        console.log(
+            `[POOL] Empty ${emptyPoolCount}/${EMPTY_POOL_LIMIT}`
+        );
+
+        // Đủ 50 lần liên tiếp
+        if (emptyPoolCount >= EMPTY_POOL_LIMIT) {
+
+            const pauseTime = getEmptyPoolPause();
+
+            console.log(
+                `[POOL] Empty ${EMPTY_POOL_LIMIT} times -> ` +
+                `pause ${(pauseTime / 60000).toFixed(2)} minutes`
+            );
+
+            // Reset để sau khi nghỉ sẽ đếm lại từ đầu
+            emptyPoolCount = 0;
+
+            // tick() sẽ dùng delay này để schedule lần call tiếp theo
+            return pauseTime;
+        }
+
+        // Chưa đủ 50 lần -> tiếp tục polling bình thường
         return getAdaptivePollInterval();
     }
 
