@@ -51,7 +51,7 @@
     const CLICK_URL = "https://beacon.tbrain.ai";
 
     // ---------- Auto fetch ----------
-    let POLL_INTERVAL = 2000;
+    let POLL_INTERVAL = 7000;
     let MIN_DURATION_SECONDS = 7200;
     const TOKEN_RETRY_INTERVAL = 60000;
     const REQUEST_TIMEOUT = 5000;
@@ -1965,15 +1965,17 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
     }
 
     function getAdaptivePollInterval() {
-        const minDelay = 1000;
-        const maxDelay = 3500;
+        const minDelay = 6500; // 6 giây
+        const maxDelay = 9000; // 8 giây
 
         const randomDelay =
             Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 
-        console.log(`Random Time: ${randomDelay}`);
+        console.log(
+            `[POOL] Next call in ${(randomDelay / 1000).toFixed(2)}s`
+        );
 
-        return Math.max(randomDelay, MIN_SAFE_POLL_INTERVAL);
+        return randomDelay;
     }
 
     const JWT_RE = /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
@@ -2404,43 +2406,6 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
     let cycleRunning = false;
 
     // ============================================================
-    // EMPTY POOL BACKOFF
-    // Random 50-100 lần Pool không có task
-    // -> nghỉ random 1-3 phút
-    // ============================================================
-    const MIN_EMPTY_POOL_LIMIT = 50;
-    const MAX_EMPTY_POOL_LIMIT = 100;
-
-    let emptyPoolLimit = getRandomEmptyPoolLimit();
-    let emptyPoolCount = 0;
-
-    const EMPTY_POOL_PAUSE_MIN = 60 * 1000;       // 1 phút
-    const EMPTY_POOL_PAUSE_MAX = 3 * 60 * 1000;   // 3 phút
-
-    function getRandomEmptyPoolLimit() {
-        return Math.floor(
-            Math.random() *
-            (
-                MAX_EMPTY_POOL_LIMIT -
-                MIN_EMPTY_POOL_LIMIT +
-                1
-            )
-        ) + MIN_EMPTY_POOL_LIMIT;
-    }
-
-    function getEmptyPoolPause() {
-        return Math.floor(
-            Math.random() *
-            (
-                EMPTY_POOL_PAUSE_MAX -
-                EMPTY_POOL_PAUSE_MIN +
-                1
-            )
-        ) + EMPTY_POOL_PAUSE_MIN;
-    }
-
-
-    // ============================================================
     // TASKS API
     // Sau mỗi lần Pool thành công:
     // chờ random 50-150ms rồi gọi Tasks API
@@ -2820,16 +2785,8 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         // 10. CÓ TASK PHÙ HỢP
         // ========================================================
         if (eligibleTasks.length > 0) {
-            emptyPoolCount = 0;
-
-            // Reset limit cho chu kỳ empty tiếp theo
-            emptyPoolLimit =
-                getRandomEmptyPoolLimit();
-
             console.log(
-                `[POOL] Found ${eligibleTasks.length} eligible task(s)` +
-                ` -> reset empty counter` +
-                ` -> next empty limit: ${emptyPoolLimit}`
+                `[POOL] Found ${eligibleTasks.length} eligible task(s)`
             );
 
             if (AUTO_ACQUIRE) {
@@ -2842,44 +2799,6 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             // Nếu acquire thành công thì
             // turnOffAutoTakeTask() đã đặt stopped = true
             return getAdaptivePollInterval();
-        }
-
-
-        // ========================================================
-        // 11. KHÔNG CÓ TASK PHÙ HỢP
-        // ========================================================
-        emptyPoolCount++;
-
-        console.log(
-            `[POOL] Empty ${emptyPoolCount}/${emptyPoolLimit}`
-        );
-
-
-        // ========================================================
-        // 12. ĐẠT EMPTY LIMIT -> NGHỈ 1-3 PHÚT
-        // ========================================================
-        if (
-            emptyPoolCount >= emptyPoolLimit
-        ) {
-            const pauseTime = getEmptyPoolPause();
-
-            console.log(
-                `[POOL] Empty ${emptyPoolLimit} times` +
-                ` -> pause ${(pauseTime / 60000).toFixed(2)} minutes`
-            );
-
-            emptyPoolCount = 0;
-
-            // Mỗi chu kỳ nghỉ xong sẽ random lại limit 50-100
-            emptyPoolLimit = getRandomEmptyPoolLimit();
-
-            console.log(
-                `[POOL] Next empty limit: ${emptyPoolLimit}`
-            );
-
-            // tick() dùng pauseTime để chờ,
-            // sau đó tự gọi Pool lại
-            return pauseTime;
         }
 
         // ========================================================
