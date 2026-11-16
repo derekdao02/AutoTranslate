@@ -51,15 +51,8 @@
     const CLICK_URL = "https://beacon.tbrain.ai";
 
     // ---------- Auto fetch ----------
-    let POLL_INTERVAL = 7000;
-    let MIN_DURATION_SECONDS = 7200;
-    const TOKEN_RETRY_INTERVAL = 60000;
-    const REQUEST_TIMEOUT = 5000;
-    const AUTO_ACQUIRE = true;
-    const PERF_LOG = true;
-    const MIN_SAFE_POLL_INTERVAL = 1000;
-    const RATE_LIMIT_FALLBACK_WAIT = 5000;
-    const RATE_LIMIT_SAFETY_MS = 1000;
+    let POLL_INTERVAL = 8000;
+    let MIN_DURATION_SECONDS = 1800;
 
     // ---------- L3 ----------
     const L3_CDN_URL = 'https://cdn.jsdelivr.net/gh/derekdao02/AutoTranslate@master/l3.json';
@@ -313,8 +306,21 @@
         const videos =
             [...document.querySelectorAll("video")];
 
-        // Chỉ temporary mới yêu cầu video đang phát
+        if (!videos.length) {
+            return;
+        }
+
+
+        // ============================================================
+        // TEMPORARY:
+        // Chỉ boost khi có video đang PLAY
+        //
+        // PERMANENT:
+        // Cho phép chọn 10x / 16x ngay cả khi PAUSE
+        // ============================================================
+
         if (mode === "temporary") {
+
             const isAnyVideoPlaying =
                 videos.some(video =>
                     !video.paused &&
@@ -344,17 +350,6 @@
             boostMode === mode &&
             videos.every(v => v.playbackRate === rate)
         ) {
-            return;
-        }
-
-        const isAnyVideoPlaying =
-            videos.some(video =>
-                !video.paused &&
-                !video.ended &&
-                video.readyState > 0
-            );
-
-        if (!isAnyVideoPlaying) {
             return;
         }
 
@@ -1912,13 +1907,28 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
 
 
     /* =====================================================================
-     * CODE PATH: 10 - AUTO FETCH & TASK ACQUIRE
-     * Nội dung:
-     * - Bắt JWT Tbrain (fetch/XHR, storage, cookie)
-     * - Rate limit
-     * - Poll task pool + auto acquire
-     * - Notification + beep
-     * ===================================================================== */
+ * CODE PATH: 10 - AUTO TAKE TASK FROM HTML
+ *
+ * Giữ lại:
+ * - Bắt JWT Tbrain cho các API khác như Earnings
+ * - Notification
+ * - Beep
+ * - Auto Take Task ON/OFF
+ * - MIN_DURATION_SECONDS
+ *
+ * Bỏ:
+ * - GET Pool API
+ * - POST Acquire API
+ * - Rate limit của Pool API
+ * - Held / Max / Total
+ *
+ * Flow mới:
+ * Tasks tab
+ * -> Open tasks tab
+ * -> đọc tr[data-testid="pool-row"]
+ * -> lọc duration
+ * -> click button[data-testid="pool-take"]
+ * ===================================================================== */
 
     const log = {
         info: (...a) => console.log("[INFO]", ...a),
@@ -1926,908 +1936,1357 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         error: (...a) => console.error("[ERROR]", ...a)
     };
 
-    const now = () => performance.now();
-    function perf(label, start) { if (PERF_LOG) log.info(`[PERF] ${label}: ${(now() - start).toFixed(1)} ms`); }
 
-    const rateLimitState = { limit: null, remaining: null, resetAt: 0, pauseUntil: 0, lastStatus: null };
+    // =====================================================================
+    // JWT CAPTURE
+    //
+    // Vẫn giữ phần này vì updateMyEarnings() đang dùng findToken()
+    // và origFetch.
+    // =====================================================================
 
-    function readRateLimitHeaders(response) {
-        const headers = response.headers;
-        const limitRaw = headers.get("x-ratelimit-limit");
-        const remainingRaw = headers.get("x-ratelimit-remaining");
-        const resetRaw = headers.get("x-ratelimit-reset");
+    const JWT_RE =
+        /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
 
-        const limit = limitRaw === null ? NaN : Number(limitRaw);
-        const remaining = remainingRaw === null ? NaN : Number(remainingRaw);
-
-        if (Number.isFinite(limit) && limit >= 0) rateLimitState.limit = limit;
-        if (Number.isFinite(remaining) && remaining >= 0) rateLimitState.remaining = remaining;
-
-        if (resetRaw !== null) {
-            const reset = Number(resetRaw);
-            if (Number.isFinite(reset) && reset >= 0) {
-                rateLimitState.resetAt = reset > 1e9 ? reset * 1000 : Date.now() + reset * 1000;
-            }
-        }
-        rateLimitState.lastStatus = response.status;
-        if (response.status === 429) {
-            rateLimitState.pauseUntil = Math.max(rateLimitState.pauseUntil, Date.now() + RATE_LIMIT_FALLBACK_WAIT + RATE_LIMIT_SAFETY_MS);
-        }
-    }
-
-    async function waitForRateLimit() {
-        while (!stopped) {
-            const waitMs = rateLimitState.pauseUntil - Date.now();
-            if (waitMs <= 0) return;
-            await new Promise(resolve => setTimeout(resolve, waitMs));
-        }
-        throw new Error("Task monitor stopped");
-    }
-
-    function getAdaptivePollInterval() {
-        const minDelay = 6500; // 6 giây
-        const maxDelay = 9000; // 8 giây
-
-        const randomDelay =
-            Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
-
-        console.log(
-            `[POOL] Next call in ${(randomDelay / 1000).toFixed(2)}s`
-        );
-
-        return randomDelay;
-    }
-
-    const JWT_RE = /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
     const interceptedTokens = new Map();
     const rejectedTokens = new Set();
+
     let cachedTokenCandidate = null;
-    let lastTokenValue = null;
+
 
     function decodePayload(token) {
         try {
-            let p = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-            p += "=".repeat((4 - p.length % 4) % 4);
-            const binary = atob(p);
-            const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-            return JSON.parse(new TextDecoder().decode(bytes));
-        } catch (_) { return null; }
+            let payload = token
+                .split(".")[1]
+                .replace(/-/g, "+")
+                .replace(/_/g, "/");
+
+            payload += "=".repeat(
+                (4 - payload.length % 4) % 4
+            );
+
+            const binary = atob(payload);
+
+            const bytes = Uint8Array.from(
+                binary,
+                char => char.charCodeAt(0)
+            );
+
+            return JSON.parse(
+                new TextDecoder().decode(bytes)
+            );
+
+        } catch (_) {
+            return null;
+        }
     }
+
 
     function scoreSource(source) {
         let score = 0;
-        if (/access|auth|jwt|bearer|token|session/i.test(source)) score += 2;
-        if (/refresh/i.test(source)) score -= 5;
+
+        if (
+            /access|auth|jwt|bearer|token|session/i.test(
+                source
+            )
+        ) {
+            score += 2;
+        }
+
+        if (/refresh/i.test(source)) {
+            score -= 5;
+        }
+
         return score;
     }
 
+
     function scanString(raw, source, found) {
-        if (typeof raw !== "string" || raw.length < 20) return;
+        if (
+            typeof raw !== "string" ||
+            raw.length < 20
+        ) {
+            return;
+        }
+
         JWT_RE.lastIndex = 0;
+
         let match;
-        while ((match = JWT_RE.exec(raw)) !== null) {
+
+        while (
+            (match = JWT_RE.exec(raw)) !== null
+        ) {
             const token = match[0];
-            if (rejectedTokens.has(token)) continue;
+
+            if (rejectedTokens.has(token)) {
+                continue;
+            }
+
             const payload = decodePayload(token);
-            if (!payload) continue;
-            const candidate = { token, source, payload, score: scoreSource(source) };
+
+            if (!payload) {
+                continue;
+            }
+
+            const candidate = {
+                token,
+                source,
+                payload,
+                score: scoreSource(source)
+            };
+
             const existing = found.get(token);
-            if (!existing || candidate.score > existing.score) found.set(token, candidate);
+
+            if (
+                !existing ||
+                candidate.score > existing.score
+            ) {
+                found.set(token, candidate);
+            }
         }
     }
+
 
     function scanStorage(storage, label, found) {
         try {
-            for (let i = 0; i < storage.length; i++) {
-                const key = storage.key(i);
-                if (key !== null) scanString(storage.getItem(key), `${label}:${key}`, found);
+            for (
+                let index = 0;
+                index < storage.length;
+                index++
+            ) {
+                const key = storage.key(index);
+
+                if (key !== null) {
+                    scanString(
+                        storage.getItem(key),
+                        `${label}:${key}`,
+                        found
+                    );
+                }
             }
-        } catch (_) { }
+        } catch (_) {
+            // Ignore inaccessible storage.
+        }
     }
+
 
     function scanCookies(found) {
         try {
-            for (const pair of document.cookie.split(";")) {
+            for (
+                const pair of document.cookie.split(";")
+            ) {
                 const index = pair.indexOf("=");
-                if (index >= 0) scanString(pair.slice(index + 1).trim(), `cookie:${pair.slice(0, index).trim()}`, found);
+
+                if (index < 0) {
+                    continue;
+                }
+
+                const key =
+                    pair.slice(0, index).trim();
+
+                const value =
+                    pair.slice(index + 1).trim();
+
+                scanString(
+                    value,
+                    `cookie:${key}`,
+                    found
+                );
             }
-        } catch (_) { }
+
+        } catch (_) {
+            // Ignore inaccessible cookies.
+        }
     }
+
 
     function findToken(forceScan = false) {
         const timestamp = Date.now();
-        if (!forceScan && cachedTokenCandidate) {
-            const cached = cachedTokenCandidate;
-            const expiry = Number(cached.payload.exp);
-            if (!rejectedTokens.has(cached.token) && (!expiry || expiry * 1000 > timestamp + 5000)) return cached;
+
+        if (
+            !forceScan &&
+            cachedTokenCandidate
+        ) {
+            const cached =
+                cachedTokenCandidate;
+
+            const expiry =
+                Number(cached.payload.exp);
+
+            const stillValid =
+                !expiry ||
+                expiry * 1000 > timestamp + 5000;
+
+            if (
+                !rejectedTokens.has(cached.token) &&
+                stillValid
+            ) {
+                return cached;
+            }
+
             cachedTokenCandidate = null;
         }
 
+
         const found = new Map();
-        for (const token of interceptedTokens.keys()) {
-            if (!rejectedTokens.has(token)) {
-                const payload = decodePayload(token);
-                if (payload) found.set(token, { token, source: "intercepted request", payload, score: 10 });
+
+
+        // Ưu tiên token bắt được từ request thật của website.
+        for (
+            const token of interceptedTokens.keys()
+        ) {
+            if (rejectedTokens.has(token)) {
+                continue;
             }
+
+            const payload =
+                decodePayload(token);
+
+            if (!payload) {
+                continue;
+            }
+
+            found.set(token, {
+                token,
+                source: "intercepted request",
+                payload,
+                score: 10
+            });
         }
 
-        if (forceScan || found.size === 0) {
-            scanStorage(window.localStorage, "localStorage", found);
-            scanStorage(window.sessionStorage, "sessionStorage", found);
+
+        if (
+            forceScan ||
+            found.size === 0
+        ) {
+            scanStorage(
+                window.localStorage,
+                "localStorage",
+                found
+            );
+
+            scanStorage(
+                window.sessionStorage,
+                "sessionStorage",
+                found
+            );
+
             scanCookies(found);
         }
 
+
         let best = null;
-        for (const candidate of found.values()) {
-            if (!rejectedTokens.has(candidate.token)) {
-                const expiry = Number(candidate.payload.exp);
-                if (!expiry || expiry * 1000 > timestamp + 5000) {
-                    if (!best || candidate.score > best.score) best = candidate;
-                }
+
+        for (
+            const candidate of found.values()
+        ) {
+            if (
+                rejectedTokens.has(candidate.token)
+            ) {
+                continue;
+            }
+
+            const expiry =
+                Number(candidate.payload.exp);
+
+            const stillValid =
+                !expiry ||
+                expiry * 1000 > timestamp + 5000;
+
+            if (!stillValid) {
+                continue;
+            }
+
+            if (
+                !best ||
+                candidate.score > best.score
+            ) {
+                best = candidate;
             }
         }
+
         cachedTokenCandidate = best;
+
         return best;
     }
 
+
+    // =====================================================================
+    // INTERCEPT AUTHORIZATION HEADERS
+    // =====================================================================
+
     const origFetch = window.fetch;
-    const xhrProto = XMLHttpRequest.prototype;
-    const origOpen = xhrProto.open;
-    const origSetHeader = xhrProto.setRequestHeader;
+
+    const xhrProto =
+        XMLHttpRequest.prototype;
+
+    const origOpen =
+        xhrProto.open;
+
+    const origSetHeader =
+        xhrProto.setRequestHeader;
+
 
     function captureAuth(value, url) {
         try {
-            if (typeof value !== "string" || !url) return;
-            const parsed = new URL(String(url), location.href);
-            if (parsed.hostname.endsWith("tbrain.ai")) {
-                JWT_RE.lastIndex = 0;
-                let match;
-                while ((match = JWT_RE.exec(value)) !== null) interceptedTokens.set(match[0], Date.now());
+            if (
+                typeof value !== "string" ||
+                !url
+            ) {
+                return;
             }
-        } catch (_) { }
+
+            const parsed = new URL(
+                String(url),
+                location.href
+            );
+
+            if (
+                !parsed.hostname.endsWith(
+                    "tbrain.ai"
+                )
+            ) {
+                return;
+            }
+
+            JWT_RE.lastIndex = 0;
+
+            let match;
+
+            while (
+                (match = JWT_RE.exec(value)) !== null
+            ) {
+                interceptedTokens.set(
+                    match[0],
+                    Date.now()
+                );
+            }
+
+        } catch (_) {
+            // Ignore malformed URLs.
+        }
     }
 
+
     function readHeaders(headers) {
-        if (!headers) return null;
+        if (!headers) {
+            return null;
+        }
+
         try {
-            if (headers instanceof Headers) return headers.get("authorization");
-            if (Array.isArray(headers)) {
-                for (const pair of headers) if (String(pair[0]).toLowerCase() === "authorization") return String(pair[1]);
-            } else if (typeof headers === "object") {
-                for (const key of Object.keys(headers)) if (key.toLowerCase() === "authorization") return String(headers[key]);
+            if (headers instanceof Headers) {
+                return headers.get(
+                    "authorization"
+                );
             }
-        } catch (_) { }
+
+            if (Array.isArray(headers)) {
+                for (const pair of headers) {
+                    if (
+                        String(pair[0])
+                            .toLowerCase() ===
+                        "authorization"
+                    ) {
+                        return String(pair[1]);
+                    }
+                }
+
+                return null;
+            }
+
+            if (typeof headers === "object") {
+                for (
+                    const key of Object.keys(headers)
+                ) {
+                    if (
+                        key.toLowerCase() ===
+                        "authorization"
+                    ) {
+                        return String(headers[key]);
+                    }
+                }
+            }
+
+        } catch (_) {
+            // Ignore invalid header structures.
+        }
+
         return null;
     }
 
+
     window.fetch = function (input, init) {
         try {
-            const url = typeof input === "string" ? input : input instanceof URL ? input.href : input && input.url;
-            const auth = readHeaders(init && init.headers) || readHeaders(input && input.headers);
-            if (auth) captureAuth(auth, url);
-        } catch (_) { }
-        return origFetch.apply(this, arguments);
+            const url =
+                typeof input === "string"
+                    ? input
+                    : input instanceof URL
+                        ? input.href
+                        : input?.url;
+
+            const auth =
+                readHeaders(init?.headers) ||
+                readHeaders(input?.headers);
+
+            if (auth) {
+                captureAuth(auth, url);
+            }
+
+        } catch (_) {
+            // Do not block the original request.
+        }
+
+        return origFetch.apply(
+            this,
+            arguments
+        );
     };
 
-    xhrProto.open = function (method, url) { this.tbMonitorUrl = String(url); return origOpen.apply(this, arguments); };
-    xhrProto.setRequestHeader = function (name, value) {
-        if (String(name).toLowerCase() === "authorization") captureAuth(value, this.tbMonitorUrl);
-        return origSetHeader.apply(this, arguments);
+
+    xhrProto.open = function (
+        method,
+        url
+    ) {
+        this.tbMonitorUrl =
+            String(url);
+
+        return origOpen.apply(
+            this,
+            arguments
+        );
     };
+
+
+    xhrProto.setRequestHeader = function (
+        name,
+        value
+    ) {
+        if (
+            String(name).toLowerCase() ===
+            "authorization"
+        ) {
+            captureAuth(
+                value,
+                this.tbMonitorUrl
+            );
+        }
+
+        return origSetHeader.apply(
+            this,
+            arguments
+        );
+    };
+
+
+    // =====================================================================
+    // NOTIFICATION + BEEP
+    // =====================================================================
 
     let audioCtx = null;
     let deniedLogged = false;
 
+
     async function ensurePermission() {
-        if (!("Notification" in window)) return false;
-        if (Notification.permission === "granted") return true;
-        if (Notification.permission === "denied") {
-            if (!deniedLogged) {
-                log.warn("Notification permission denied.");
-                deniedLogged = true;
-            }
+        if (!("Notification" in window)) {
             return false;
         }
+
+        if (
+            Notification.permission ===
+            "granted"
+        ) {
+            return true;
+        }
+
+        if (
+            Notification.permission ===
+            "denied"
+        ) {
+            if (!deniedLogged) {
+                log.warn(
+                    "Notification permission denied."
+                );
+
+                deniedLogged = true;
+            }
+
+            return false;
+        }
+
         try {
-            return await Notification.requestPermission() === "granted";
+            const permission =
+                await Notification.requestPermission();
+
+            return permission === "granted";
+
         } catch (_) {
             return false;
         }
     }
 
+
     function unlockAudio() {
         try {
-            const AC = window.AudioContext || window.webkitAudioContext;
-            if (AC && !audioCtx) audioCtx = new AC();
-            if (audioCtx && audioCtx.state === "suspended") void audioCtx.resume();
-        } catch (_) { }
+            const AudioContextClass =
+                window.AudioContext ||
+                window.webkitAudioContext;
+
+            if (
+                AudioContextClass &&
+                !audioCtx
+            ) {
+                audioCtx =
+                    new AudioContextClass();
+            }
+
+            if (
+                audioCtx &&
+                audioCtx.state === "suspended"
+            ) {
+                void audioCtx.resume();
+            }
+
+        } catch (_) {
+            // Ignore unavailable audio API.
+        }
     }
+
 
     function beep() {
         try {
-            if (!audioCtx) unlockAudio();
-            if (!audioCtx || audioCtx.state !== "running") return;
-            const start = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.value = 880;
-            osc.connect(gain);
+            if (!audioCtx) {
+                unlockAudio();
+            }
+
+            if (
+                !audioCtx ||
+                audioCtx.state !== "running"
+            ) {
+                return;
+            }
+
+            const start =
+                audioCtx.currentTime;
+
+            const oscillator =
+                audioCtx.createOscillator();
+
+            const gain =
+                audioCtx.createGain();
+
+            oscillator.frequency.value = 880;
+
+            oscillator.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start(start);
-            osc.stop(start + 0.15);
-        } catch (_) { }
+
+            gain.gain.setValueAtTime(
+                0.12,
+                start
+            );
+
+            gain.gain.exponentialRampToValueAtTime(
+                0.001,
+                start + 0.15
+            );
+
+            oscillator.start(start);
+            oscillator.stop(start + 0.15);
+
+        } catch (_) {
+            // Ignore audio errors.
+        }
     }
 
-    async function showAcquireNotification(acquiredTasks) {
-        if (!acquiredTasks || acquiredTasks.length === 0) return;
+
+    async function showAcquireNotification(
+        acquiredTasks
+    ) {
+        if (
+            !Array.isArray(acquiredTasks) ||
+            acquiredTasks.length === 0
+        ) {
+            return;
+        }
+
         beep();
 
         if (!(await ensurePermission())) {
-            log.info("[NOTIFICATION PERMISSION DENIED]", acquiredTasks);
+            log.info(
+                "[NOTIFICATION PERMISSION DENIED]",
+                acquiredTasks
+            );
+
             return;
         }
 
         try {
-            for (const item of acquiredTasks) {
-                const hours = Number.isFinite(item.durationSeconds)
-                    ? (item.durationSeconds / 3600).toFixed(2)
-                    : "Unknown";
+            for (
+                const item of acquiredTasks
+            ) {
+                const hours =
+                    Number.isFinite(
+                        item.durationSeconds
+                    )
+                        ? (
+                            item.durationSeconds /
+                            3600
+                        ).toFixed(2)
+                        : "Unknown";
 
-                const title = "🚀 Đã nhận Task mới thành công!";
-                const body = `ID: ${item.id}\nThời lượng: ${hours} giờ`;
+                const title =
+                    "🚀 Đã nhận Task mới thành công!";
 
-                const notification = new Notification(title, {
-                    body: body,
-                    tag: `tbrain-acquired-${item.id}`,
-                    renotify: true
-                });
+                const body =
+                    `Task: ${item.id}\n` +
+                    `Thời lượng: ${hours} giờ`;
 
-                notification.onclick = event => {
-                    event.preventDefault();
-                    window.open(CLICK_URL, "_blank");
-                    try { window.focus(); } catch (_) { }
-                    notification.close();
-                };
+                const notification =
+                    new Notification(
+                        title,
+                        {
+                            body,
+                            tag:
+                                `tbrain-acquired-${item.id}`,
+
+                            renotify: true
+                        }
+                    );
+
+                notification.onclick =
+                    event => {
+                        event.preventDefault();
+
+                        window.open(
+                            CLICK_URL,
+                            "_blank"
+                        );
+
+                        try {
+                            window.focus();
+                        } catch (_) {
+                            // Ignore focus error.
+                        }
+
+                        notification.close();
+                    };
             }
+
         } catch (error) {
-            log.error("Notification failed:", error.message);
+            log.error(
+                "Notification failed:",
+                error.message
+            );
         }
     }
 
-    function getTaskId(task) {
-        if (!task) return null;
-        const id = task.id !== undefined ? task.id : task.taskId !== undefined ? task.taskId : task._id;
-        return id != null ? String(id) : null;
-    }
 
-    let poolCapacityState = {
-        held: 0,
-        max: 0,
-        total: 0
-    };
+    // =====================================================================
+    // AUTO TAKE STATE
+    // =====================================================================
 
-    function updatePoolCapacityUI(held, max, total) {
-        poolCapacityState.held = Number(held) || 0;
-        poolCapacityState.max = Number(max) || 0;
-        poolCapacityState.total = Number(total) || 0;
+    let timer = null;
+    let stopped = false;
+    let cycleRunning = false;
 
-        const heldEl = document.getElementById(
-            'tb-pool-capacity-display'
+    // Thời gian chờ tab Open tasks render.
+    const HTML_TAB_RENDER_DELAY = 1200;
+
+    // Thời gian chờ sau khi click Take.
+    const HTML_AFTER_TAKE_DELAY = 1500;
+
+
+    // =====================================================================
+    // SMALL HELPERS
+    // =====================================================================
+
+    const sleepTaskHtml = milliseconds =>
+        new Promise(resolve =>
+            setTimeout(resolve, milliseconds)
         );
 
-        const totalEl = document.getElementById(
-            'tb-pool-total-display'
+
+    function getTasksTab() {
+        return document.querySelector(
+            'button[data-testid="my-project-tab-tasks"]'
+        );
+    }
+
+
+    function getOpenTasksTab() {
+        return document.querySelector(
+            'button[data-testid="my-project-tab-pool"]'
+        );
+    }
+
+
+    function isSelectedTab(element) {
+        return (
+            element?.getAttribute(
+                "aria-selected"
+            ) === "true"
+        );
+    }
+
+
+    async function activateTab(element) {
+        if (!element) {
+            console.warn("[TASK HTML] Tab not found");
+            return false;
+        }
+
+        const tabName =
+            element.getAttribute("data-testid") ||
+            element.textContent?.trim() ||
+            "Unknown tab";
+
+        const selected =
+            element.getAttribute("aria-selected") === "true";
+
+        if (!selected) {
+            console.log(
+                `🔄 [TASK HTML] Switching -> ${tabName}`
+            );
+
+            element.click();
+
+            console.log(
+                `⏳ [TASK HTML] Waiting ${(HTML_TAB_RENDER_DELAY / 1000).toFixed(1)}s after switching tab...`
+            );
+            console.log(
+                `⏳ [OPEN TASKS HTML] Waiting ${(POLL_INTERVAL / 1000).toFixed(1)}s after switching tab...`
+            );
+
+            await sleepTaskHtml(
+                HTML_TAB_RENDER_DELAY
+            );
+
+            console.log(
+                `✅ [TASK HTML] Wait finished -> ${tabName}`
+            );
+        }
+
+        return true;
+    }
+
+
+    // =====================================================================
+    // PARSE DURATION FROM HTML
+    // =====================================================================
+
+    function parseDurationToSeconds(text) {
+        if (!text) {
+            return 0;
+        }
+
+        const value = String(text)
+            .trim()
+            .toLowerCase()
+            .replace(/,/g, ".");
+
+
+        // 02:15:30
+        // 02:15
+        const colonMatch = value.match(
+            /^(\d{1,3}):(\d{1,2})(?::(\d{1,2}))?$/
         );
 
-        const hasHeld = poolCapacityState.held > 0;
+        if (colonMatch) {
+            const hours =
+                Number(colonMatch[1]) || 0;
 
-        if (heldEl) {
-            heldEl.innerHTML = hasHeld
-                ? `<span style="
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              background: #00bf81;
-              display: inline-block;
-              flex-shrink: 0;
-           "></span>
-           <span>Held ${poolCapacityState.held}/${poolCapacityState.max}</span>`
-                : `<span>Held ${poolCapacityState.held}/${poolCapacityState.max}</span>`;
+            const minutes =
+                Number(colonMatch[2]) || 0;
 
-            heldEl.style.gap = '5px';
+            const seconds =
+                Number(colonMatch[3]) || 0;
 
-            heldEl.style.color =
-                hasHeld ? '#39e6ad' : '#94a3b8';
-
-            heldEl.style.backgroundColor =
-                hasHeld
-                    ? 'rgba(0, 191, 129, 0.13)'
-                    : 'rgba(71, 85, 105, 0.20)';
-
-            heldEl.style.borderColor =
-                hasHeld
-                    ? 'rgba(0, 191, 129, 0.20)'
-                    : 'rgba(148, 163, 184, 0.20)';
+            return (
+                hours * 3600 +
+                minutes * 60 +
+                seconds
+            );
         }
 
-        if (totalEl) {
-            const hasData = poolCapacityState.total > 0;
 
-            totalEl.innerHTML = hasData
-                ? `<span style="
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              background: #3b82f6;
-              display: inline-block;
-              flex-shrink: 0;
-           "></span>
-           <span>Total ${poolCapacityState.total}</span>`
-                : `<span>Total ${poolCapacityState.total}</span>`;
+        let totalSeconds = 0;
 
-            totalEl.style.gap = '5px';
 
-            totalEl.style.color =
-                hasData ? '#93c5fd' : '#94a3b8';
+        const hourMatch = value.match(
+            /(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\b/
+        );
 
-            totalEl.style.backgroundColor =
-                hasData
-                    ? 'rgba(59, 130, 246, 0.13)'
-                    : 'rgba(71, 85, 105, 0.20)';
+        const minuteMatch = value.match(
+            /(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\b/
+        );
 
-            totalEl.style.borderColor =
-                hasData
-                    ? 'rgba(59, 130, 246, 0.20)'
-                    : 'rgba(148, 163, 184, 0.20)';
+        const secondMatch = value.match(
+            /(\d+(?:\.\d+)?)\s*(?:s|sec|secs|second|seconds)\b/
+        );
+
+
+        if (hourMatch) {
+            totalSeconds +=
+                Number(hourMatch[1]) * 3600;
         }
-    }
 
-    // const mocks = [
-    //     [0, 1, 0],
-    //     [0, 1, 5],
-    //     [1, 1, 5],
-    // ];
-
-    // let i = 0;
-
-    // setInterval(() => {
-    //     const [held, max, total] = mocks[i];
-
-    //     updatePoolCapacityUI(held, max, total);
-
-    //     console.log(`Mock: Held ${held}/${max} | Total ${total}`);
-
-    //     i = (i + 1) % mocks.length;
-    // }, 2000);
-
-    async function fetchPool(token) {
-        await waitForRateLimit();
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-        try {
-            const response = await origFetch.call(window, API_URL, {
-                method: "GET",
-                headers: { Authorization: `Bearer ${token}`, Accept: "*/*" },
-                credentials: "include",
-                cache: "no-store",
-                signal: controller.signal
-            });
-            readRateLimitHeaders(response);
-            return response;
-        } finally { clearTimeout(timeout); }
-    }
-
-    async function acquireTask(token, taskObj) {
-        const id = getTaskId(taskObj);
-        try {
-            const response = await origFetch.call(window, `${API_BASE}/api/v1/tasks/${encodeURIComponent(id)}/acquire`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "*/*" },
-                credentials: "include",
-                body: "{}"
-            });
-            readRateLimitHeaders(response);
-            return { taskObj, id, ok: response.ok, status: response.status };
-        } catch (error) {
-            return { taskObj, id, ok: false, status: 0 };
+        if (minuteMatch) {
+            totalSeconds +=
+                Number(minuteMatch[1]) * 60;
         }
+
+        if (secondMatch) {
+            totalSeconds +=
+                Number(secondMatch[1]);
+        }
+
+
+        // Nếu HTML chỉ trả về một số đơn,
+        // coi số đó là phút.
+        if (
+            totalSeconds === 0 &&
+            /^\d+(?:\.\d+)?$/.test(value)
+        ) {
+            totalSeconds =
+                Number(value) * 60;
+        }
+
+
+        return totalSeconds;
     }
 
-    function turnOffAutoTakeTask() {
-        // Lưu trạng thái OFF
+
+    // =====================================================================
+    // READ TASK ROW FROM HTML
+    // =====================================================================
+
+    function readTaskRow(row) {
+        if (!row) {
+            return null;
+        }
+
+        const cells =
+            row.querySelectorAll("td");
+
+        if (cells.length < 4) {
+            return null;
+        }
+
+
+        const titleElement =
+            cells[0]?.querySelector(
+                "[title]"
+            );
+
+
+        const taskName =
+            titleElement?.getAttribute(
+                "title"
+            )?.trim() ||
+            cells[0]?.textContent?.trim() ||
+            "Unknown task";
+
+
+        // ToolUpdate đang đọc duration ở cột thứ 4.
+        const durationText =
+            cells[3]?.textContent?.trim() ||
+            row.querySelector(
+                '[data-testid*="duration"]'
+            )?.textContent?.trim() ||
+            "";
+
+
+        const durationSeconds =
+            parseDurationToSeconds(
+                durationText
+            );
+
+
+        const takeButton =
+            row.querySelector(
+                'button[data-testid="pool-take"]'
+            );
+
+
+        return {
+            row,
+            taskName,
+            durationText,
+            durationSeconds,
+            takeButton
+        };
+    }
+
+
+    function getOpenTasksFromHtml() {
+        return [
+            ...document.querySelectorAll(
+                'tr[data-testid="pool-row"]'
+            )
+        ]
+            .map(readTaskRow)
+            .filter(Boolean);
+    }
+
+
+    function isTakeButtonAvailable(button) {
+        if (!button) {
+            return false;
+        }
+
+        return (
+            !button.disabled &&
+            button.getAttribute(
+                "aria-disabled"
+            ) !== "true"
+        );
+    }
+
+
+    function getEligibleHtmlTasks() {
+        return getOpenTasksFromHtml()
+            .filter(task => {
+                return (
+                    isTakeButtonAvailable(
+                        task.takeButton
+                    ) &&
+                    Number.isFinite(
+                        task.durationSeconds
+                    ) &&
+                    task.durationSeconds >=
+                    MIN_DURATION_SECONDS
+                );
+            })
+            .sort(
+                (left, right) =>
+                    right.durationSeconds -
+                    left.durationSeconds
+            );
+    }
+
+
+    // =====================================================================
+    // AUTO TAKE OFF
+    // =====================================================================
+
+    function turnOffAutoTakeTask(
+        reason = "Task acquired"
+    ) {
         localStorage.setItem(
             STORAGE_KEYS.active,
             JSON.stringify(false)
         );
 
-        // Dừng vòng poll tiếp theo
         stopped = true;
+
         clearTimeout(timer);
         timer = null;
 
-        // Đồng bộ button Take Task trên UI
-        const wrapper = document.getElementById(
-            "tb-fetch-control-wrapper"
-        );
+        const wrapper =
+            document.getElementById(
+                "tb-fetch-control-wrapper"
+            );
 
-        const btn = wrapper?.querySelector("button");
+        const button =
+            wrapper?.querySelector("button");
 
-        if (btn) {
-            btn.style.backgroundColor = "#475569";
-            btn.style.opacity = "0.88";
-            btn.title = "Auto Take Task: OFF";
-            btn.setAttribute("aria-pressed", "false");
+        if (button) {
+            button.style.backgroundColor =
+                "#475569";
+
+            button.style.opacity =
+                "0.88";
+
+            button.title =
+                "Auto Take Task: OFF";
+
+            button.setAttribute(
+                "aria-pressed",
+                "false"
+            );
         }
 
         console.log(
-            "🛑 [TBRAIN] Task acquired -> Auto Take Task OFF"
+            `🛑 [TBRAIN] ${reason} -> Auto Take Task OFF`
         );
     }
 
-    async function acquireNew(token, taskList) {
-        let successfullyAcquired = [];
-        for (const taskObj of taskList) {
-            const res = await acquireTask(token, taskObj);
-            if (res.ok) {
-                successfullyAcquired.push({
-                    id: res.id,
-                    durationSeconds: taskObj.durationSeconds
-                });
 
-                // Có task thành công -> OFF Take Task ngay
-                turnOffAutoTakeTask();
+    // =====================================================================
+    // TAKE TASK THROUGH HTML
+    // =====================================================================
 
-                // Không acquire thêm task khác trong batch này
-                break;
-            }
-
-        }
-
-        if (successfullyAcquired.length > 0) {
-            await showAcquireNotification(successfullyAcquired);
-        }
-
-        return { success: successfullyAcquired.length, total: taskList.length };
-    }
-
-    function extractTasks(body) {
-        if (Array.isArray(body)) return body;
-        if (!body || typeof body !== "object") return null;
-        for (const key of ["tasks", "items", "results", "data", "records", "rows", "content"]) {
-            if (Array.isArray(body[key])) return body[key];
-        }
-        return null;
-    }
-
-    const seenIds = new Set();
-    let firstPoll = true;
-    let timer = null;
-    let stopped = false;
-    let cycleRunning = false;
-
-    // ============================================================
-    // TASKS API
-    // Sau mỗi lần Pool thành công:
-    // chờ random 50-150ms rồi gọi Tasks API
-    // ============================================================
-    const TASKS_API_URL =
-        `${API_BASE}/api/v1/tasks?page=1&pageSize=20&projectId=${PROJECT_ID}`;
-
-    const TASKS_AFTER_POOL_MIN_DELAY = 50;
-    const TASKS_AFTER_POOL_MAX_DELAY = 150;
-
-    function getTasksAfterPoolDelay() {
-        return Math.floor(
-            Math.random() *
-            (
-                TASKS_AFTER_POOL_MAX_DELAY -
-                TASKS_AFTER_POOL_MIN_DELAY +
-                1
+    async function takeTaskFromHtml(task) {
+        if (
+            !task ||
+            !isTakeButtonAvailable(
+                task.takeButton
             )
-        ) + TASKS_AFTER_POOL_MIN_DELAY;
-    }
+        ) {
+            return false;
+        }
 
-
-    // ============================================================
-    // CALL TASKS API
-    // Dùng origFetch để tránh đi qua fetch interceptor lần nữa
-    // ============================================================
-    async function callTasksApi(token) {
-        const controller = new AbortController();
-
-        const timeout = setTimeout(
-            () => controller.abort(),
-            REQUEST_TIMEOUT
+        console.log(
+            "[TASK HTML] Taking task:",
+            {
+                task: task.taskName,
+                duration: task.durationText,
+                durationSeconds:
+                    task.durationSeconds
+            }
         );
 
-        try {
-            console.log("[TASKS] Calling Tasks API...");
 
-            const response = await origFetch.call(
-                window,
-                TASKS_API_URL,
+        // Đánh dấu hàng đang chọn.
+        task.row.style.outline =
+            "2px solid #00bf81";
+
+        task.row.style.outlineOffset =
+            "-2px";
+
+        task.row.style.background =
+            "rgba(0, 191, 129, 0.10)";
+
+
+        // Đây là hành động Take duy nhất.
+        // Không POST acquire API.
+        task.takeButton.click();
+
+
+        await sleepTaskHtml(HTML_AFTER_TAKE_DELAY);
+
+
+        // Sau click, button thường bị disabled hoặc row bị remove.
+        const rowStillConnected =
+            task.row.isConnected;
+
+        const buttonStillAvailable =
+            rowStillConnected &&
+            isTakeButtonAvailable(
+                task.takeButton
+            );
+
+
+        if (buttonStillAvailable) {
+            console.warn(
+                "[TASK HTML] Take button vẫn còn active; chưa xác nhận nhận task thành công."
+            );
+
+            task.row.style.outline = "";
+            task.row.style.outlineOffset = "";
+            task.row.style.background = "";
+
+            return false;
+        }
+
+
+        turnOffAutoTakeTask(
+            "Task acquired"
+        );
+
+
+        await showAcquireNotification([
+            {
+                id: task.taskName,
+                durationSeconds:
+                    task.durationSeconds
+            }
+        ]);
+
+
+        return true;
+    }
+
+    // =====================================================================
+    // CHECK ACQUIRE CAPACITY FROM HTML
+    // =====================================================================
+
+    function getAcquireCapacityFromHtml() {
+        const capacityEl =
+            document.querySelector(
+                '[data-testid="acquire-capacity"]'
+            );
+
+        if (!capacityEl) {
+            console.log(
+                "ℹ️ [TASK HTML] Acquire capacity not found."
+            );
+
+            return null;
+        }
+
+        const text =
+            capacityEl.textContent?.trim() || "";
+
+        // Ví dụ:
+        // "1/1 in hand"
+        // "0/1 in hand"
+        // "2/2 in hand"
+        const match =
+            text.match(/(\d+)\s*\/\s*(\d+)/);
+
+        if (!match) {
+            console.warn(
+                "[TASK HTML] Cannot parse acquire capacity:",
+                text
+            );
+
+            return null;
+        }
+
+        const current =
+            Number(match[1]);
+
+        const max =
+            Number(match[2]);
+
+        return {
+            current,
+            max,
+            text,
+            isFull:
+                Number.isFinite(current) &&
+                Number.isFinite(max) &&
+                max > 0 &&
+                current >= max
+        };
+    }
+
+    // =====================================================================
+    // RUN ONE HTML CYCLE
+    // =====================================================================
+
+    async function runCycle() {
+        if (stopped) {
+            return POLL_INTERVAL;
+        }
+
+        const tasksTab =
+            getTasksTab();
+
+        const openTasksTab =
+            getOpenTasksTab();
+
+
+        if (
+            !tasksTab ||
+            !openTasksTab
+        ) {
+            console.warn(
+                "[TASK HTML] Tasks hoặc Open tasks tab chưa xuất hiện."
+            );
+
+            return POLL_INTERVAL;
+        }
+
+
+        // 1. Mở Tasks.
+        await activateTab(
+            tasksTab
+        );
+
+        if (stopped) {
+            return POLL_INTERVAL;
+        }
+
+
+        // 2. Mở Open tasks.
+        await activateTab(
+            openTasksTab
+        );
+
+        if (stopped) {
+            return POLL_INTERVAL;
+        }
+
+        // ========================================================
+        // 2.1 CHECK CAPACITY
+        // ========================================================
+
+        const capacity =
+            getAcquireCapacityFromHtml();
+
+        if (capacity) {
+
+            console.log(
+                `📦 [TASK HTML] Capacity: ${capacity.current}/${capacity.max}`
+            );
+
+            if (capacity.isFull) {
+
+                console.log(
+                    `🛑 [TASK HTML] Capacity FULL ` +
+                    `(${capacity.current}/${capacity.max}) -> Take Task OFF`
+                );
+
+                turnOffAutoTakeTask(
+                    `Capacity full (${capacity.current}/${capacity.max})`
+                );
+
+                return POLL_INTERVAL;
+            }
+        }
+
+        // 3. Đọc task trực tiếp từ HTML.
+        const allTasks =
+            getOpenTasksFromHtml();
+
+        console.log(
+            `⏱️ [TASK HTML] Min length: ${(MIN_DURATION_SECONDS / 60).toFixed(0)} min`
+        );
+
+        console.log(
+            `[TASK HTML] Found ${allTasks.length} task(s)`
+        );
+
+
+        // 4. Lọc task theo MIN_DURATION_SECONDS.
+        const eligibleTasks = getEligibleHtmlTasks();
+
+
+        if (eligibleTasks.length === 0) {
+            console.log(
+                "[TASK HTML] Không có task phù hợp.",
                 {
-                    method: "GET",
-
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        Accept: "*/*"
-                    },
-
-                    credentials: "include",
-                    cache: "no-store",
-                    signal: controller.signal
+                    minimumMinutes:
+                        MIN_DURATION_SECONDS / 60,
+                    totalRows:
+                        allTasks.length
                 }
             );
 
-            // Đồng bộ rate-limit từ Tasks API
-            readRateLimitHeaders(response);
 
-            console.log(
-                `[TASKS] Response HTTP ${response.status}`
-            );
-
-            if (
-                response.status === 401 ||
-                response.status === 403
-            ) {
-                console.warn(
-                    `[TASKS] Authentication failed: HTTP ${response.status}`
-                );
-
-                return {
-                    ok: false,
-                    authError: true,
-                    status: response.status,
-                    data: null
-                };
-            }
-
-            if (!response.ok) {
-                console.warn(
-                    `[TASKS] Request failed: HTTP ${response.status}`
-                );
-
-                return {
-                    ok: false,
-                    authError: false,
-                    status: response.status,
-                    data: null
-                };
-            }
-
-            let data = null;
-
-            try {
-                data = await response.json();
-            } catch (error) {
-                console.warn(
-                    "[TASKS] Cannot parse JSON:",
-                    error
+            // Quay lại Tasks để giữ UI giống flow cũ.
+            if (!stopped) {
+                await activateTab(
+                    tasksTab
                 );
             }
 
-            console.log(
-                "[TASKS] Success:",
-                data
-            );
-
-            return {
-                ok: true,
-                authError: false,
-                status: response.status,
-                data
-            };
-
-        } catch (error) {
-            if (error?.name === "AbortError") {
-                console.warn(
-                    `[TASKS] Request timeout after ${REQUEST_TIMEOUT}ms`
-                );
-            } else {
-                console.error(
-                    "[TASKS] Request error:",
-                    error
-                );
-            }
-
-            return {
-                ok: false,
-                authError: false,
-                status: 0,
-                data: null,
-                error
-            };
-
-        } finally {
-            clearTimeout(timeout);
+            return POLL_INTERVAL;
         }
+
+
+        console.table(
+            eligibleTasks.map(task => ({
+                Task: task.taskName,
+                Duration:
+                    task.durationText,
+                Minutes:
+                    (
+                        task.durationSeconds /
+                        60
+                    ).toFixed(1)
+            }))
+        );
+
+
+        // 5. Chọn task dài nhất.
+        const selectedTask =
+            eligibleTasks[0];
+
+
+        // 6. Click Take bằng HTML.
+        const acquired =
+            await takeTaskFromHtml(
+                selectedTask
+            );
+
+
+        if (acquired) {
+            return POLL_INTERVAL;
+        }
+
+
+        // Nếu click chưa thành công thì quay lại Tasks,
+        // chu kỳ sau sẽ kiểm tra lại.
+        if (!stopped) {
+            await activateTab(
+                tasksTab
+            );
+        }
+
+
+        return POLL_INTERVAL;
     }
 
 
-    // ============================================================
-    // RUN ONE COMPLETE CYCLE
-    //
-    // POOL
-    // -> chờ 50-150ms
-    // -> TASKS
-    // -> xử lý Pool
-    // -> chờ random polling delay
-    // -> POOL tiếp theo
-    // ============================================================
-    async function runCycle() {
-        const candidate =
-            findToken() ||
-            findToken(true);
-
-        if (!candidate) {
-            console.warn(
-                "[POOL] Token not found"
-            );
-
-            return TOKEN_RETRY_INTERVAL;
-        }
-
-
-        // ========================================================
-        // 1. CALL POOL API
-        // ========================================================
-        let response;
-
-        try {
-            console.log("[POOL] Calling Pool API...");
-
-            response = await fetchPool(
-                candidate.token
-            );
-
-            console.log(
-                `[POOL] Response HTTP ${response.status}`
-            );
-
-        } catch (error) {
-            console.warn(
-                "[POOL] Request error:",
-                error
-            );
-
-            return getAdaptivePollInterval();
-        }
-
-
-        // ========================================================
-        // 2. HANDLE POOL AUTH ERROR
-        // ========================================================
-        if (
-            response.status === 401 ||
-            response.status === 403
-        ) {
-            rejectedTokens.add(
-                candidate.token
-            );
-
-            cachedTokenCandidate = null;
-
-            return TOKEN_RETRY_INTERVAL;
-        }
-
-
-        // ========================================================
-        // 3. HANDLE OTHER POOL ERRORS
-        // ========================================================
-        if (!response.ok) {
-            console.warn(
-                `[POOL] Request failed: HTTP ${response.status}`
-            );
-
-            return getAdaptivePollInterval();
-        }
-
-
-        // ========================================================
-        // 4. PARSE POOL RESPONSE
-        // ========================================================
-        let body;
-
-        try {
-            body = await response.json();
-        } catch (error) {
-            console.warn(
-                "[POOL] Cannot parse JSON:",
-                error
-            );
-
-            return getAdaptivePollInterval();
-        }
-
-
-        // ========================================================
-        // 5. POOL XONG -> CHỜ RANDOM 50-150ms
-        //
-        // Lưu ý: file đã có const sleep ở Code Path 06.
-        // Không khai báo lại sleep ở đây.
-        // ========================================================
-        const tasksDelay =
-            getTasksAfterPoolDelay();
-
-        console.log(
-            `[POOL -> TASKS] Waiting ${tasksDelay}ms`
-        );
-
-        await sleep(tasksDelay);
-
-
-        // Nếu Take Task đã OFF trong lúc chờ thì không call tiếp
-        const isStillActive =
-            localStorage.getItem(STORAGE_KEYS.active) !== null
-                ? JSON.parse(
-                    localStorage.getItem(
-                        STORAGE_KEYS.active
-                    )
-                )
-                : true;
-
-        if (
-            !isStillActive ||
-            stopped
-        ) {
-            console.log(
-                "[POOL -> TASKS] Cancelled because Take Task is OFF"
-            );
-
-            return getAdaptivePollInterval();
-        }
-
-
-        // ========================================================
-        // 6. CALL TASKS API
-        // ========================================================
-        console.log(
-            "[POOL -> TASKS] Calling callTasksApi()"
-        );
-
-        const tasksApiResult =
-            await callTasksApi(
-                candidate.token
-            );
-
-        console.log(
-            "[POOL -> TASKS] callTasksApi() finished",
-            tasksApiResult
-        );
-
-
-        // Nếu token của Tasks API không hợp lệ
-        if (tasksApiResult?.authError) {
-            rejectedTokens.add(
-                candidate.token
-            );
-
-            cachedTokenCandidate = null;
-
-            return TOKEN_RETRY_INTERVAL;
-        }
-
-
-        // ========================================================
-        // 7. POOL CAPACITY: held / max / total
-        // ========================================================
-        const held = Number(
-            body?.status?.capacity?.held
-        );
-
-        const max = Number(
-            body?.status?.capacity?.max
-        );
-
-        const total =
-            Array.isArray(body?.data)
-                ? body.data.length
-                : 0;
-
-        if (
-            Number.isFinite(held) &&
-            Number.isFinite(max)
-        ) {
-            updatePoolCapacityUI(
-                held,
-                max,
-                total
-            );
-        }
-
-
-        // ========================================================
-        // 8. EXTRACT POOL TASKS
-        // ========================================================
-        const tasks = extractTasks(body);
-
-        if (!tasks) {
-            console.warn(
-                "[POOL] Task list not found in response"
-            );
-
-            return getAdaptivePollInterval();
-        }
-
-
-        // ========================================================
-        // 9. FILTER ELIGIBLE TASKS
-        // ========================================================
-        const eligibleTasks = [];
-
-        for (const task of tasks) {
-            const id = getTaskId(task);
-
-            if (
-                id === null ||
-                seenIds.has(id)
-            ) {
-                continue;
-            }
-
-            seenIds.add(id);
-
-            const duration = Number(
-                task?.durationSeconds
-            );
-
-            if (
-                Number.isFinite(duration) &&
-                duration > MIN_DURATION_SECONDS
-            ) {
-                eligibleTasks.push(task);
-            }
-        }
-
-
-        // ========================================================
-        // 10. CÓ TASK PHÙ HỢP
-        // ========================================================
-        if (eligibleTasks.length > 0) {
-            console.log(
-                `[POOL] Found ${eligibleTasks.length} eligible task(s)`
-            );
-
-            if (AUTO_ACQUIRE) {
-                await acquireNew(
-                    candidate.token,
-                    eligibleTasks
-                );
-            }
-
-            // Nếu acquire thành công thì
-            // turnOffAutoTakeTask() đã đặt stopped = true
-            return getAdaptivePollInterval();
-        }
-
-        // ========================================================
-        // 13. CHƯA ĐẠT EMPTY LIMIT
-        // Chờ delay hiện tại rồi gọi Pool lại
-        // ========================================================
-        return getAdaptivePollInterval();
-    }
+    // =====================================================================
+    // TICK
+    // =====================================================================
 
     async function tick() {
-        let isActive = localStorage.getItem(STORAGE_KEYS.active) !== null ? JSON.parse(localStorage.getItem(STORAGE_KEYS.active)) : true;
-        if (!isActive || stopped || cycleRunning) return;
+        const storedActive =
+            localStorage.getItem(
+                STORAGE_KEYS.active
+            );
+
+        const isActive =
+            storedActive !== null
+                ? JSON.parse(storedActive)
+                : true;
+
+
+        if (
+            !isActive ||
+            stopped ||
+            cycleRunning
+        ) {
+            return;
+        }
+
+
         cycleRunning = true;
+
+
         try {
-            const delay = await runCycle();
-            if (!stopped) timer = setTimeout(tick, delay);
-        } catch (_) {
-            if (!stopped) timer = setTimeout(tick, getAdaptivePollInterval());
+            const delay =
+                await runCycle();
+
+            if (!stopped) {
+                timer = setTimeout(
+                    tick,
+                    delay
+                );
+            }
+
+        } catch (error) {
+            console.error(
+                "[TASK HTML] Cycle error:",
+                error
+            );
+
+            if (!stopped) {
+                timer = setTimeout(
+                    tick,
+                    POLL_INTERVAL
+                );
+            }
+
         } finally {
             cycleRunning = false;
         }
     }
 
+
+    // =====================================================================
+    // STOP
+    // =====================================================================
+
     function stop() {
         stopped = true;
+
         clearTimeout(timer);
+
+        timer = null;
     }
 
+
+    // =====================================================================
+    // START
+    // =====================================================================
+
     tick();
+
+    // Giữ dòng này vì bạn vẫn cần notification.
     void ensurePermission();
 
 
@@ -3140,80 +3599,6 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             earningsDisplay
         );
 
-        // ============================================================
-        // POOL CAPACITY
-        // ============================================================
-
-        const capacityDisplay =
-            document.createElement("span");
-
-        capacityDisplay.id =
-            "tb-pool-capacity-display";
-
-        capacityDisplay.textContent =
-            `Held ${poolCapacityState.held}/${poolCapacityState.max}`;
-
-        capacityDisplay.style.cssText = `
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 7px;
-
-            border: 1px solid rgba(148, 163, 184, 0.20);
-            border-radius: 7px;
-
-            background: rgba(71, 85, 105, 0.20);
-            color: #94a3b8;
-
-            font-size: 10px;
-            font-weight: 600;
-            line-height: 1;
-            white-space: nowrap;
-
-            transition:
-                color 0.15s ease,
-                background-color 0.15s ease,
-                border-color 0.15s ease,
-                box-shadow 0.15s ease;
-        `;
-
-        wrapper.appendChild(capacityDisplay);
-
-        const totalDisplay = document.createElement("span");
-
-        totalDisplay.id = "tb-pool-total-display";
-
-        totalDisplay.textContent =
-            `Total ${poolCapacityState.total}`;
-
-        totalDisplay.style.cssText = `
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 7px;
-
-            border: 1px solid rgba(148, 163, 184, 0.20);
-            border-radius: 7px;
-
-            background: rgba(71, 85, 105, 0.20);
-            color: #94a3b8;
-
-            font-size: 10px;
-            font-weight: 600;
-            line-height: 1;
-            white-space: nowrap;
-        `;
-
-        wrapper.appendChild(totalDisplay);
-
-        updatePoolCapacityUI(
-            poolCapacityState.held,
-            poolCapacityState.max,
-            poolCapacityState.total
-        );
-
 
         // ============================================================
         // TAKE TASK BUTTON
@@ -3296,7 +3681,7 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         // Text cố định
         const takeTaskText = document.createElement("span");
 
-        takeTaskText.textContent = "Take Task";
+        takeTaskText.textContent = "Take Tasks";
 
         takeTaskText.style.cssText = `
     height: 13px;
@@ -3425,7 +3810,7 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             window.__TB_EARNINGS_TIMER__ =
                 setInterval(
                     updateMyEarnings,
-                    15000
+                    30000
                 );
         }
     }
