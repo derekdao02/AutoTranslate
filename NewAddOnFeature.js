@@ -58,12 +58,49 @@
     const L3_CDN_URL = 'https://cdn.jsdelivr.net/gh/derekdao02/AutoTranslate@master/l3.json';
     let GLOBAL_L3_LIST = []; // Danh sách L3 sau khi tải từ CDN
 
+    const EXCLUDED_ENVIRONMENTS = [
+        "Food and Beverage › Kitchen"
+    ];
+
+    function getCustomExcludedTaskCategories() {
+        try {
+            const saved =
+                JSON.parse(
+                    localStorage.getItem(
+                        STORAGE_KEYS.excludedTaskCategories
+                    ) || "[]"
+                );
+
+            return Array.isArray(saved)
+                ? saved
+                    .map(value =>
+                        String(value).trim()
+                    )
+                    .filter(Boolean)
+                : [];
+
+        } catch (_) {
+            return [];
+        }
+    }
+
+
+    function getAllExcludedTaskCategories() {
+        return [
+            ...new Set([
+                ...EXCLUDED_ENVIRONMENTS,
+                ...getCustomExcludedTaskCategories()
+            ])
+        ];
+    }
+
     // ---------- localStorage keys ----------
     const STORAGE_KEYS = {
         active: 'tb_fetch_active_state',
         poll: 'tb_poll_interval_val',
         duration: 'tb_min_duration_val',
-        apiKey: 'tb_groq_api_key_custom'
+        apiKey: 'tb_groq_api_key_custom',
+        excludedTaskCategories: 'tb_excluded_task_categories'
     };
 
     // ---------- Nút cần khóa/mở khi đang chạy ----------
@@ -1706,6 +1743,52 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         btn.disabled = false;
     }
 
+    function getEpisodeButtons() {
+        // ============================================================
+        // EXPANDED MODE
+        // ============================================================
+
+        const expandedButtons = [
+            ...document.querySelectorAll(
+                '[data-testid^="episode-index-row-"]'
+            )
+        ];
+
+        if (expandedButtons.length) {
+            console.log(
+                `[TBRAIN] Episode list: expanded mode | ${expandedButtons.length} segments`
+            );
+
+            return expandedButtons;
+        }
+
+        // ============================================================
+        // COLLAPSED MODE
+        // ============================================================
+
+        const collapsedButtons = [
+            ...document.querySelectorAll(
+                'button[data-testid^="episode-tag-"]'
+            )
+        ];
+
+        if (collapsedButtons.length) {
+            console.log(
+                `[TBRAIN] Episode list: collapsed mode | ${collapsedButtons.length} segments`
+            );
+
+            return collapsedButtons;
+        }
+
+
+        console.warn(
+            "[TBRAIN] Không tìm thấy episode buttons."
+        );
+
+        return [];
+    }
+
+
     // ---------- FILL ALL ----------
     async function runFillAll() {
         const currentBtnId = 'tb-inject-loop';
@@ -1714,8 +1797,13 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         try {
             if (isFillAllRunning) { isFillAllRunning = false; return; }
 
-            const episodeButtons = Array.from(document.querySelectorAll('[data-testid^="episode-index-row-"]'));
-            if (!episodeButtons.length) { alert('Không tìm thấy danh sách episode.'); return; }
+            const episodeButtons =
+                getEpisodeButtons();
+
+            if (!episodeButtons.length) {
+                alert('Không tìm thấy danh sách episode.');
+                return;
+            }
 
             isFillAllRunning = true;
             const loopButtons = document.querySelectorAll('.tb-inject-loop-btn');
@@ -1879,7 +1967,7 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             const customVal = inputEl ? inputEl.value.trim() : '';
             if (!customVal) { alert('Vui lòng nhập giá trị L3 vào ô text box trước!'); return; }
 
-            const episodeButtons = Array.from(document.querySelectorAll('[data-testid^="episode-index-row-"]'));
+            const episodeButtons = getEpisodeButtons();
             if (!episodeButtons.length) { runFillOneL3(); return; }
 
             isFillAllL3Running = true;
@@ -2586,9 +2674,10 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
     let timer = null;
     let stopped = false;
     let cycleRunning = false;
+    let verifyTaskRunning = false;
 
     // Thời gian chờ tab Open tasks render.
-    const HTML_TAB_RENDER_DELAY = 1200;
+    const HTML_TAB_RENDER_DELAY = 900;
 
     // Thời gian chờ sau khi click Take.
     const HTML_AFTER_TAKE_DELAY = 1500;
@@ -2629,7 +2718,10 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
 
     async function activateTab(element) {
         if (!element) {
-            console.warn("[TASK HTML] Tab not found");
+            console.warn(
+                "[TASK HTML] Tab not found"
+            );
+
             return false;
         }
 
@@ -2638,33 +2730,58 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             element.textContent?.trim() ||
             "Unknown tab";
 
-        const selected =
-            element.getAttribute("aria-selected") === "true";
+        // Đã ở đúng tab
+        if (
+            element.getAttribute("aria-selected") === "true"
+        ) {
+            return true;
+        }
 
-        if (!selected) {
-            console.log(
-                `🔄 [TASK HTML] Switching -> ${tabName}`
-            );
+        console.log(
+            `🔄 [TASK HTML] Switching -> ${tabName}`
+        );
 
-            element.click();
+        element.click();
 
-            console.log(
-                `⏳ [TASK HTML] Waiting ${(HTML_TAB_RENDER_DELAY / 1000).toFixed(1)}s after switching tab...`
-            );
-            console.log(
-                `⏳ [OPEN TASKS HTML] Waiting ${(POLL_INTERVAL / 1000).toFixed(1)}s after switching tab...`
-            );
+        const timeout = 3000;
+        const checkEvery = 100;
+        const started = Date.now();
+
+        while (
+            Date.now() - started < timeout
+        ) {
+            // React có thể render lại tab nên query lại element
+            const currentTab =
+                document.querySelector(
+                    `button[data-testid="${tabName}"]`
+                );
+
+            if (
+                currentTab?.getAttribute(
+                    "aria-selected"
+                ) === "true"
+            ) {
+                console.log(
+                    `✅ [TASK HTML] Tab switched -> ${tabName}`
+                );
+
+                await sleepTaskHtml(
+                    HTML_TAB_RENDER_DELAY
+                );
+
+                return true;
+            }
 
             await sleepTaskHtml(
-                HTML_TAB_RENDER_DELAY
-            );
-
-            console.log(
-                `✅ [TASK HTML] Wait finished -> ${tabName}`
+                checkEvery
             );
         }
 
-        return true;
+        console.warn(
+            `⚠️ [TASK HTML] Tab switch FAILED -> ${tabName}`
+        );
+
+        return false;
     }
 
 
@@ -2763,29 +2880,21 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             return null;
         }
 
-        const cells =
-            row.querySelectorAll("td");
+        const cells = row.querySelectorAll("td");
 
         if (cells.length < 4) {
             return null;
         }
 
-
         const titleElement =
-            cells[0]?.querySelector(
-                "[title]"
-            );
-
+            cells[0]?.querySelector("[title]");
 
         const taskName =
-            titleElement?.getAttribute(
-                "title"
-            )?.trim() ||
+            titleElement?.getAttribute("title")?.trim() ||
             cells[0]?.textContent?.trim() ||
             "Unknown task";
 
-
-        // ToolUpdate đang đọc duration ở cột thứ 4.
+        // Duration
         const durationText =
             cells[3]?.textContent?.trim() ||
             row.querySelector(
@@ -2793,25 +2902,52 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             )?.textContent?.trim() ||
             "";
 
-
         const durationSeconds =
-            parseDurationToSeconds(
-                durationText
-            );
+            parseDurationToSeconds(durationText);
 
-
+        // Take button
         const takeButton =
             row.querySelector(
                 'button[data-testid="pool-take"]'
             );
 
+        // ============================================================
+        // ENVIRONMENT
+        // Đọc trực tiếp toàn bộ text trong row.
+        // Ví dụ:
+        // Environment
+        // Food and Beverage › Kitchen
+        // ============================================================
+
+        const rowText = String(
+            row.innerText ||
+            row.textContent ||
+            ""
+        )
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const allExcluded = getAllExcludedTaskCategories();
+
+        const matchedExcludedEnvironment =
+            allExcluded.find(value =>
+                rowText
+                    .toLowerCase()
+                    .includes(
+                        value.toLowerCase()
+                    )
+            ) || "";
 
         return {
             row,
             taskName,
             durationText,
             durationSeconds,
-            takeButton
+            takeButton,
+
+            // Environment bị blacklist nếu tìm thấy
+            excludedEnvironment:
+                matchedExcludedEnvironment
         };
     }
 
@@ -2844,6 +2980,27 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
     function getEligibleHtmlTasks() {
         return getOpenTasksFromHtml()
             .filter(task => {
+
+                // ====================================================
+                // SKIP EXCLUDED ENVIRONMENT
+                // ====================================================
+
+                if (task.excludedEnvironment) {
+                    console.log(
+                        `🚫 [TASK FILTER] Skip excluded environment: ${task.excludedEnvironment}`,
+                        {
+                            task: task.taskName,
+                            duration: task.durationText
+                        }
+                    );
+
+                    return false;
+                }
+
+                // ====================================================
+                // NORMAL FILTER
+                // ====================================================
+
                 return (
                     isTakeButtonAvailable(
                         task.takeButton
@@ -2909,6 +3066,154 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         );
     }
 
+    // =====================================================================
+    // VERIFY TASK EXISTS IN MY TASKS BEFORE TURNING AUTO TAKE OFF
+    // =====================================================================
+    const VERIFY_TASK_INTERVAL_MS = 1500;
+
+    async function checkTaskExistsInMyTasks(taskName) {
+        const candidate = findToken() || findToken(true);
+
+        if (!candidate?.token) {
+            console.warn(
+                "[TASK VERIFY] Không tìm thấy Tbrain JWT, sẽ thử lại."
+            );
+            return false;
+        }
+
+        const url =
+            `${API_BASE}/api/v1/tasks` +
+            `?page=1` +
+            `&pageSize=20` +
+            `&q=${encodeURIComponent(taskName)}` +
+            `&projectId=${encodeURIComponent(PROJECT_ID)}`;
+
+        try {
+            console.log(
+                `🔍 [TASK VERIFY] Checking: ${taskName}`
+            );
+
+            const response = await origFetch.call(
+                window,
+                url,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "*/*",
+                        Authorization: `Bearer ${candidate.token}`
+                    },
+                    credentials: "include"
+                }
+            );
+
+            if (!response.ok) {
+                // Token có thể hết hạn
+                if (
+                    response.status === 401 ||
+                    response.status === 403
+                ) {
+                    rejectedTokens.add(candidate.token);
+                    cachedTokenCandidate = null;
+                }
+
+                console.warn(
+                    `[TASK VERIFY] HTTP ${response.status}, sẽ thử lại.`
+                );
+
+                return false;
+            }
+
+            const result = await response.json();
+
+            console.log(
+                "[TASK VERIFY] API response:",
+                result
+            );
+
+            /*
+             * Hỗ trợ các response phổ biến:
+             *
+             * { data: [...] }
+             * { data: {...} }
+             * [...]
+             */
+            const data = result?.data;
+
+            if (data == null) {
+                console.log(
+                    "⏳ [TASK VERIFY] data = null → task chưa vào My Tasks."
+                );
+
+                return false;
+            }
+
+            if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    console.log(
+                        "⏳ [TASK VERIFY] data = [] → task chưa vào My Tasks."
+                    );
+
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (typeof data === "object") {
+                return true;
+            }
+
+            return false;
+
+        } catch (error) {
+            console.warn(
+                "[TASK VERIFY] Check failed, sẽ thử lại:",
+                error
+            );
+
+            return false;
+        }
+    }
+
+
+    async function waitUntilTaskExistsInMyTasks(taskName) {
+        let attempt = 0;
+
+        verifyTaskRunning = true;
+
+        while (verifyTaskRunning) {
+            attempt++;
+
+            const exists =
+                await checkTaskExistsInMyTasks(taskName);
+
+            if (exists) {
+                console.log(
+                    `✅ [TASK VERIFY] Task đã xuất hiện trong My Tasks sau ${attempt} lần check:`,
+                    taskName
+                );
+
+                verifyTaskRunning = false;
+
+                return true;
+            }
+
+            console.log(
+                `⏳ [TASK VERIFY] Chưa thấy task. Check lại sau ${VERIFY_TASK_INTERVAL_MS / 1000
+                }s...`
+            );
+
+            await sleepTaskHtml(
+                VERIFY_TASK_INTERVAL_MS
+            );
+        }
+
+        console.log(
+            "[TASK VERIFY] Verification stopped."
+        );
+
+        return false;
+    }
 
     // =====================================================================
     // TAKE TASK THROUGH HTML
@@ -2934,8 +3239,7 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             }
         );
 
-
-        // Đánh dấu hàng đang chọn.
+        // Highlight task đang Take
         task.row.style.outline =
             "2px solid #00bf81";
 
@@ -2945,16 +3249,19 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         task.row.style.background =
             "rgba(0, 191, 129, 0.10)";
 
+        // ================================================================
+        // STEP 1: TAKE TASK THROUGH HTML
+        // ================================================================
 
-        // Đây là hành động Take duy nhất.
-        // Không POST acquire API.
         task.takeButton.click();
 
+        await sleepTaskHtml(
+            HTML_AFTER_TAKE_DELAY
+        );
 
-        await sleepTaskHtml(HTML_AFTER_TAKE_DELAY);
-
-
-        // Sau click, button thường bị disabled hoặc row bị remove.
+        // Sau click:
+        // - row có thể biến mất
+        // - hoặc button bị disable
         const rowStillConnected =
             task.row.isConnected;
 
@@ -2964,10 +3271,10 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
                 task.takeButton
             );
 
-
         if (buttonStillAvailable) {
             console.warn(
-                "[TASK HTML] Take button vẫn còn active; chưa xác nhận nhận task thành công."
+                "[TASK HTML] Take button vẫn còn active; " +
+                "chưa xác nhận nhận task thành công."
             );
 
             task.row.style.outline = "";
@@ -2977,11 +3284,47 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             return false;
         }
 
-
-        turnOffAutoTakeTask(
-            "Task acquired"
+        console.log(
+            "🔄 [TASK VERIFY] Take button đã thay đổi. " +
+            "Bắt đầu kiểm tra task trong My Tasks API..."
         );
 
+        // ================================================================
+        // STEP 2: VERIFY THROUGH /api/v1/tasks
+        //
+        // KHÔNG tắt Auto Take ở đây.
+        // Nó sẽ check liên tục tới khi API thấy task.
+        // ================================================================
+
+        const verified =
+            await waitUntilTaskExistsInMyTasks(
+                task.taskName
+            );
+
+        if (!verified) {
+            console.warn(
+                "[TASK VERIFY] Verification stopped."
+            );
+
+            return false;
+        }
+
+        // ================================================================
+        // STEP 3: API CONFIRMED -> TURN AUTO TAKE OFF
+        // ================================================================
+
+        console.log(
+            "✅ [TASK VERIFY] Task confirmed in My Tasks:",
+            task.taskName
+        );
+
+        turnOffAutoTakeTask(
+            "Task verified in My Tasks"
+        );
+
+        // ================================================================
+        // STEP 4: NOTIFICATION
+        // ================================================================
 
         await showAcquireNotification([
             {
@@ -2990,7 +3333,6 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
                     task.durationSeconds
             }
         ]);
-
 
         return true;
     }
@@ -3078,20 +3420,34 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         }
 
 
-        // 1. Mở Tasks.
-        await activateTab(
-            tasksTab
-        );
+        const switchedToTasks =
+            await activateTab(tasksTab);
+
+        if (!switchedToTasks) {
+            console.warn(
+                "⚠️ [TASK HTML] Cannot switch to Tasks tab."
+            );
+
+            return POLL_INTERVAL;
+        }
 
         if (stopped) {
             return POLL_INTERVAL;
         }
 
 
-        // 2. Mở Open tasks.
-        await activateTab(
-            openTasksTab
-        );
+        const switchedToPool =
+            await activateTab(
+                getOpenTasksTab()
+            );
+
+        if (!switchedToPool) {
+            console.warn(
+                "⚠️ [TASK HTML] Cannot switch to Open Tasks tab."
+            );
+
+            return POLL_INTERVAL;
+        }
 
         if (stopped) {
             return POLL_INTERVAL;
@@ -4532,6 +4888,335 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             title: "Minimum task length in minutes"
         });
 
+        function openMoreFeaturePopup() {
+
+            document
+                .getElementById("tb-more-feature-overlay")
+                ?.remove();
+
+
+            const overlay =
+                document.createElement("div");
+
+            overlay.id =
+                "tb-more-feature-overlay";
+
+            overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: rgba(2, 6, 23, 0.72);
+        backdrop-filter: blur(3px);
+    `;
+
+
+            const popup =
+                document.createElement("div");
+
+            popup.style.cssText = `
+        width: min(620px, 85vw);
+        max-height: 80vh;
+
+        padding: 18px;
+
+        border:
+            1px solid rgba(148, 163, 184, 0.25);
+
+        border-radius: 12px;
+
+        background: #0f172a;
+        color: #e2e8f0;
+
+        box-shadow:
+            0 25px 70px rgba(0,0,0,.45);
+    `;
+
+
+            const header =
+                document.createElement("div");
+
+            header.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    `;
+
+
+            const title =
+                document.createElement("div");
+
+            title.textContent =
+                "More Feature";
+
+            title.style.cssText = `
+        font-size: 15px;
+        font-weight: 700;
+    `;
+
+
+            const closeBtn =
+                document.createElement("button");
+
+            closeBtn.type = "button";
+            closeBtn.textContent = "✕";
+
+            closeBtn.style.cssText = `
+        width: 30px;
+        height: 30px;
+
+        border: 0;
+        border-radius: 6px;
+
+        background: rgba(148,163,184,.1);
+        color: #cbd5e1;
+
+        cursor: pointer;
+    `;
+
+
+            header.appendChild(title);
+            header.appendChild(closeBtn);
+
+
+            // ============================================================
+            // EXCLUDE SECTION
+            // ============================================================
+
+            const label =
+                document.createElement("div");
+
+            label.textContent =
+                "Exclude L1 / L2 / Environment";
+
+            label.style.cssText = `
+        margin-bottom: 5px;
+
+        font-size: 12px;
+        font-weight: 700;
+
+        color: #f8fafc;
+    `;
+
+
+            const description =
+                document.createElement("div");
+
+            description.textContent =
+                "One value per line. Matching tasks will not be taken.";
+
+            description.style.cssText = `
+        margin-bottom: 8px;
+
+        font-size: 10px;
+        color: #94a3b8;
+    `;
+
+
+            const input =
+                document.createElement("textarea");
+
+            input.id =
+                "tb-excluded-task-categories";
+
+            input.placeholder =
+                "Food and Beverage › Kitchen\nConstruction\nRetail › Supermarket";
+
+            input.value =
+                getCustomExcludedTaskCategories()
+                    .join("\n");
+
+            input.style.cssText = `
+        width: 100%;
+        min-height: 180px;
+
+        box-sizing: border-box;
+
+        padding: 10px 11px;
+
+        resize: vertical;
+
+        border:
+            1px solid rgba(148,163,184,.25);
+
+        border-radius: 8px;
+
+        outline: none;
+
+        background: rgba(15,23,42,.75);
+
+        color: #e2e8f0;
+
+        font-family: inherit;
+        font-size: 12px;
+        line-height: 1.6;
+    `;
+
+
+            // ============================================================
+            // DEFAULT LIST INFO
+            // ============================================================
+
+            const defaultInfo =
+                document.createElement("div");
+
+            defaultInfo.textContent =
+                "Default exclude: " +
+                EXCLUDED_ENVIRONMENTS.join(", ");
+
+            defaultInfo.style.cssText = `
+        margin-top: 7px;
+
+        font-size: 10px;
+        color: #64748b;
+    `;
+
+
+            // ============================================================
+            // BUTTONS
+            // ============================================================
+
+            const footer =
+                document.createElement("div");
+
+            footer.style.cssText = `
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+
+        margin-top: 16px;
+    `;
+
+
+            const cancelBtn =
+                document.createElement("button");
+
+            cancelBtn.type = "button";
+            cancelBtn.textContent = "Cancel";
+
+            cancelBtn.style.cssText = `
+        height: 31px;
+        padding: 0 12px;
+
+        border:
+            1px solid rgba(148,163,184,.25);
+
+        border-radius: 7px;
+
+        background: rgba(71,85,105,.20);
+        color: #cbd5e1;
+
+        cursor: pointer;
+    `;
+
+
+            const saveBtn =
+                document.createElement("button");
+
+            saveBtn.type = "button";
+            saveBtn.textContent = "Save";
+
+            saveBtn.style.cssText = `
+        height: 31px;
+        padding: 0 14px;
+
+        border: 0;
+        border-radius: 7px;
+
+        background: #2563eb;
+        color: white;
+
+        font-weight: 600;
+
+        cursor: pointer;
+    `;
+
+
+            footer.appendChild(cancelBtn);
+            footer.appendChild(saveBtn);
+
+
+            popup.appendChild(header);
+            popup.appendChild(label);
+            popup.appendChild(description);
+            popup.appendChild(input);
+            popup.appendChild(defaultInfo);
+            popup.appendChild(footer);
+
+            overlay.appendChild(popup);
+
+            document.body.appendChild(overlay);
+
+
+            // ============================================================
+            // EVENTS
+            // ============================================================
+
+            const closePopup = () =>
+                overlay.remove();
+
+
+            closeBtn.addEventListener(
+                "click",
+                closePopup
+            );
+
+            cancelBtn.addEventListener(
+                "click",
+                closePopup
+            );
+
+
+            overlay.addEventListener(
+                "click",
+                event => {
+
+                    if (event.target === overlay) {
+                        closePopup();
+                    }
+                }
+            );
+
+
+            saveBtn.addEventListener(
+                "click",
+                () => {
+
+                    const values =
+                        input.value
+                            .split("\n")
+                            .map(value =>
+                                value.trim()
+                            )
+                            .filter(Boolean);
+
+
+                    const unique =
+                        [...new Set(values)];
+
+
+                    localStorage.setItem(
+                        STORAGE_KEYS.excludedTaskCategories,
+                        JSON.stringify(unique)
+                    );
+
+
+                    console.log(
+                        "🚫 [TASK FILTER] Saved custom excludes:",
+                        unique
+                    );
+
+
+                    closePopup();
+                }
+            );
+        }
+
 
         function saveTaskDuration() {
             const minutes = Number(
@@ -4824,6 +5509,53 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
 
         settings.appendChild(keyRow);
 
+        // ============================================================
+        // MORE FEATURE BUTTON
+        // CHÈN NGAY DƯỚI GROQ KEY
+        // ============================================================
+
+        const moreFeatureBtn =
+            document.createElement("button");
+
+        moreFeatureBtn.type = "button";
+        moreFeatureBtn.id = "tb-more-feature-btn";
+        moreFeatureBtn.textContent = "More Feature";
+
+        moreFeatureBtn.style.cssText = `
+    width: 100%;
+    height: 28px;
+    margin-top: 7px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 7px;
+
+    background: rgba(71, 85, 105, 0.18);
+    color: #cbd5e1;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+`;
+
+        moreFeatureBtn.addEventListener(
+            "click",
+            event => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                openMoreFeaturePopup();
+            }
+        );
+
+        settings.appendChild(
+            moreFeatureBtn
+        );
 
         // ============================================================
         // INSERT TRƯỚC LOGOUT
@@ -6290,11 +7022,7 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
         // TAB / SHIFT+TAB = NEXT / PREVIOUS SEGMENT
         // ============================================================
         function selectAdjacentSegment(direction = 1) {
-            const rows = [
-                ...document.querySelectorAll(
-                    '[data-testid^="episode-index-row-"]'
-                )
-            ];
+            const rows = getEpisodeButtons();
 
             if (!rows.length) {
                 console.warn("[TBRAIN] No segment rows found.");
@@ -6302,11 +7030,23 @@ Setting the table with bowls and chopsticks => Dish Handling | Easy`;
             }
 
             // Tìm segment đang active
-            const currentIndex = rows.findIndex(row =>
-                String(row.className).includes(
-                    "inset_2px_0_0_var(--color-brand-blue)"
-                )
-            );
+            const currentIndex =
+                rows.findIndex(row => {
+
+                    // Collapsed mode
+                    if (
+                        row.getAttribute("aria-current") === "true"
+                    ) {
+                        return true;
+                    }
+
+                    // Expanded mode
+                    return String(
+                        row.className
+                    ).includes(
+                        "inset_2px_0_0_var(--color-brand-blue)"
+                    );
+                });
 
             if (currentIndex < 0) {
                 console.warn("[TBRAIN] Current segment not found.");
